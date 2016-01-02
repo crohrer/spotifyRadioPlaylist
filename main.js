@@ -5,6 +5,8 @@
 var http = require('http');
 var https = require('https');
 var cheerio = require('cheerio');
+var fs = require('fs');
+var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 
 // get tracks from radio trackservice
 var trackserviceReq = http.request({
