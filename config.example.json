@@ -1,4 +1,7 @@
 {
     "clientId": "",
-    "clientSecret": ""
+    "clientSecret": "",
+    "userId": "",
+    "playlistId": "",
+    "oAuthToken": ""
 }

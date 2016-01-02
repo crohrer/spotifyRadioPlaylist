@@ -5,8 +5,17 @@
 var http = require('http');
 var https = require('https');
 var cheerio = require('cheerio');
+var oAuth = require('./oAuth');
 var fs = require('fs');
 var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+var userSecret = '';
+
+try {
+    userSecret = fs.readFileSync('userSecret', 'utf8');
+} catch (e){
+    oAuth.authenticate();
+    return;
+}
 
 // get tracks from radio trackservice
 var trackserviceReq = http.request({
@@ -27,11 +36,12 @@ var trackserviceReq = http.request({
         var tracks = [];
         $('b').each(function(i, elem){
             var $title = $(this);
-            var string = $title.text() +' - '+ $title.next('i').text();
+            var $artist = $title.next('i');
+            var string = $title.text() +' - '+ $artist.text();
             tracks.push(string);
         });
         searchSpotify(tracks);
-    })
+    });
 });
 
 trackserviceReq.on('error', function(e) {
@@ -46,8 +56,7 @@ function searchSpotify(searchStrings){
     searchStrings.forEach(function(searchString){
         var spotifySearchReq = https.request({
             hostname: "api.spotify.com",
-            path: "/v1/search?type=track&q=" + encodeURIComponent(searchString),
-            protocol: 'https:'
+            path: "/v1/search?type=track&q=" + encodeURIComponent(searchString)
         }, function(res){
             var jsonResponse = '';
             res.on('data', function(chunk){
@@ -56,7 +65,7 @@ function searchSpotify(searchStrings){
             res.on('end', function(){
                 var result = JSON.parse(jsonResponse);
                 if (result.tracks.items.length) {
-                    results.push(result.tracks.items[0].uri);
+                    results.push(encodeURIComponent(result.tracks.items[0].uri));
                 }
                 resultsCounter++;
                 if(resultsCounter === searchStrings.length){
@@ -69,5 +78,26 @@ function searchSpotify(searchStrings){
 }
 
 function addToPlaylist(results){
-    console.log(results)
+    if(userSecret === ''){
+        oAuth.authenticate();
+        return;
+    }
+    var uris = results.join();
+    var addRequest = https.request({
+        hostname: 'api.spotify.com',
+        path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?position=0&uris='+uris,
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer '+ userSecret,
+            'Accept': 'application/json'
+        }
+    }, function(res){
+        if(res.statusCode === 201){
+            console.log('Success! Added '+ results.length + 'tracks.');
+        } else {
+            console.log("Error adding to playlist. Status "+res.statusCode);
+        }
+
+    });
+    addRequest.end();
 }
