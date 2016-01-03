@@ -86,10 +86,8 @@ function writeRefreshToken(token){
 
 function writeFile(name, content){
     if(content){
-        fs.writeFile(name, content, function (err) {
-            if (err) throw err;
-            console.log(name + ' saved!');
-        });
+        fs.writeFileSync(name, content);
+        console.log(name + ' saved!');
     }
 }
 
@@ -107,10 +105,11 @@ module.exports = {
     },
     refresh: function(){
         try {
-            var refreshToken = fs.readFileSync('refreshToken', 'utf8');
             console.log('refreshing token...');
+            var refreshToken = fs.readFileSync('refreshToken', 'utf8');
             getToken(undefined, refreshToken);
         } catch (e){
+            console.log('no refreshToken found');
             oAuth.authenticate();
         }
     },
@@ -119,8 +118,9 @@ module.exports = {
             var accessToken = fs.readFileSync('accessToken', 'utf8');
             return accessToken;
         } catch (e){
-            oAuth.authenticate();
-            return false;
+            console.log('no accessToken found');
+            oAuth.refresh();
         }
+        return false;
     }
 };

@@ -41,7 +41,7 @@ function getRadioTracks(){
     });
 
     trackserviceReq.on('error', function(e) {
-        console.log('problem with request: ' + e.message);
+        console.log('problem with trackservice request: ' + e.message);
     });
 
     trackserviceReq.end();
@@ -58,6 +58,10 @@ function getPlaylistTracks(offset){
     if(accessToken === false){
         return;
     }
+    if(accessToken === ''){
+        console.log('empty accessToken');
+        return;
+    }
     var addRequest = https.request({
         hostname: 'api.spotify.com',
         path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?fields=next,items.track.uri&limit='+LIMIT+'&offset='+offset,
@@ -68,6 +72,13 @@ function getPlaylistTracks(offset){
         }
     }, function(res){
         var data = '';
+        if(res.statusCode !== 200) {
+            console.log("Error getting tracks from playlist. Status "+res.statusCode);
+            if(res.statusCode === 401){
+                oAuth.refresh();
+            }
+            return;
+        }
         res.on('data', function(chunk){
             data += chunk;
         });
@@ -82,12 +93,6 @@ function getPlaylistTracks(offset){
                 getPlaylistTracks(offset + LIMIT);
             }
         });
-        if(res.statusCode !== 200) {
-            console.log("Error getting tracks from playlist. Status "+res.statusCode);
-            if(res.statusCode === 401){
-                oAuth.refresh();
-            }
-        }
     });
     addRequest.end();
 }
@@ -155,5 +160,5 @@ function addToPlaylist(results){
 }
 
 module.exports = {
-    getTracks: getRadioTracks
+    getTracks: getAllPlaylistTracks
 }
