@@ -4,8 +4,9 @@
     "userId": "",
     "playlistId": "",
     "radioTrackserviceUrl": "http://fm4.orf.at/trackservicepopup/main",
+    "radioEntrySelector": "td[width=300]>font>br",
     "radioTitleSelector": "b",
     "radioArtistSelector": "i",
-    "fm4": true,
+    "searchLinear": true,
     "localEnvironment": true
 }

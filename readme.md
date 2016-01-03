@@ -14,9 +14,8 @@ Before running it on the server you need to authenticate via oAuth (as the user 
 
 1. Clone this repo into a local directory
 2. Copy `config.example.json` to `config.json` and insert your own credentials & radio station.
-You can obtain a clientId & clientSecret by [registering a new application](https://developer.spotify.com/my-applications/#!/applications).
-You can use the predefined radio settings for [Radio FM4](http://fm4.orf.at) or define settings for your own radio station. You need a URL to a page that lists the recently played tracks and a jQuery style selector for title and artist. I added a flag for FM4s weird HTML markup - this should be set to false for others.
-I have tested only [one other radio station](http://www.novaplanet.com/radionova), so this may require some adjustments in the code for other stations.
+You can obtain a clientId & clientSecret by [registering a new application](https://developer.spotify.com/my-applications/#!/applications).  
+There are some pre-defined and tested radio stations, they can be found in `station-examples.md`. You can define your own schemes, all you need is the URL of the playlist page of the station and three jQuery selectors: one for the playlist entry element, one for the title and one for the artist. Some radio stations (like FM4) have special markup that requires linear instead of nested search; this behaviour can be set with the `searchLinear` flag.
 3. Run `npm install`
 4. Run `node main.js`
 5. Open the displayed URL in your browser & grant permission for your app to change your playlists. This will open a page on localhost which you can close. Now you find two new files: `accessToken` and `refreshToken`. They contain the secret information to authenticate the user with spotify, so handle with care!

@@ -34,19 +34,33 @@ function getRadioTracks(trackserviceUrl){
         res.on('end', function() {
             var $ = cheerio.load(html);
             var tracks = [];
-            $(config.radioTitleSelector).each(function(i, elem){
-                var $title = $(this);
-                var $artist;
-                if(config.fm4){ // special handling for weird html structure on fm4 trackservice
-                    $artist = $title.next(config.radioArtistSelector);
+            $(config.radioEntrySelector).each(function(i, elem){
+                var $entry = $(this);
+
+                var $title, $artist;
+                if (!config.searchLinear) {
+                    // Most other station playlists feature nested markup
+                    $title = $entry.find(config.radioTitleSelector);
+                    $artist = $entry.find(config.radioArtistSelector);
                 } else {
-                    $artist = $title.siblings(config.radioArtistSelector);
+                    // Stations like ORF FM4 have strange markup and need linear search
+                    $title = $entry.nextAll(config.radioTitleSelector).first();
+                    $artist = $entry.nextAll(config.radioArtistSelector).first();
                 }
-                var title = $title.text().replace(/^\s-\s/, ''); // fix for fluxFM
-                var artist = $artist.text().replace(/^\s-\s/, '');
+
+                String.prototype.trimEx = function() { return this.trim().replace(/^\s?-\s/, ''); }
+                $title = $title.text().trimEx();
+                $artist = $artist.text().trimEx();
+
+                String.prototype.isEmpty = function() { return (!this || !this.length); }
+                if ($title.isEmpty() || $artist.isEmpty())
+                    return;
+
+                //logger.log("Found track: " + $title + " by " + $artist);
+
                 tracks.push({
-                    title: title,
-                    artist: artist
+                    title: $title,
+                    artist: $artist
                 });
             });
             if(tracks.length === 0){
