@@ -39,3 +39,11 @@ This radio station needs the linear search.
     "radioTitleSelector": "span.title",
     "radioArtistSelector": "span.artist",
     "searchLinear": false,
+
+## FluxFM
+
+    "radioTrackserviceUrl": "http://www.fluxfm.de/fluxfm-playlist/",
+    "radioEntrySelector": "table#songs>tr>td.title>div",
+    "radioTitleSelector": "span.song",
+    "radioArtistSelector": "span.artist",
+    "searchLinear": false,

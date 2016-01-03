@@ -47,8 +47,10 @@ function getRadioTracks(trackserviceUrl){
                     $title = $entry.nextAll(config.radioTitleSelector).first();
                     $artist = $entry.nextAll(config.radioArtistSelector).first();
                 }
-                $title = $title.text().trim().replace(/^\s-\s/, '');
-                $artist = $artist.text().trim().replace(/^\s-\s/, '');
+
+                String.prototype.trimEx = function() { return this.trim().replace(/^\s?-\s/, ''); }
+                $title = $title.text().trimEx();
+                $artist = $artist.text().trimEx();
 
                 String.prototype.isEmpty = function() { return (!this || !this.length); }
                 if ($title.isEmpty() || $artist.isEmpty())
