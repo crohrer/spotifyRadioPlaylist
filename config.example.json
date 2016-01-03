@@ -2,5 +2,6 @@
     "clientId": "",
     "clientSecret": "",
     "userId": "",
-    "playlistId": ""
+    "playlistId": "",
+    "localEnvironment": true
 }
