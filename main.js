@@ -8,11 +8,12 @@ var cheerio = require('cheerio');
 var oAuth = require('./oAuth');
 var fs = require('fs');
 var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+var playlistTracks = [];
 
-getTracks();
+getAllPlaylistTracks();
 
-function getTracks(){
-    // get tracks from radio trackservice
+function getRadioTracks(){
+    console.log('getting tracks from radio trackservice');
     var trackserviceReq = http.request({
         hostname: 'fm4.orf.at',
         path: '/trackservicepopup/main'
@@ -46,6 +47,51 @@ function getTracks(){
     trackserviceReq.end();
 }
 
+function getAllPlaylistTracks(){
+    getPlaylistTracks(0);
+}
+
+function getPlaylistTracks(offset){
+    var LIMIT = 100;
+    console.log('getting next '+LIMIT+' tracks from playlist...');
+    var accessToken = oAuth.getAccessToken();
+    if(accessToken === false){
+        return;
+    }
+    var addRequest = https.request({
+        hostname: 'api.spotify.com',
+        path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?fields=next,items.track.uri&limit='+LIMIT+'&offset='+offset,
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer '+ accessToken,
+            'Accept': 'application/json'
+        }
+    }, function(res){
+        var data = '';
+        res.on('data', function(chunk){
+            data += chunk;
+        });
+        res.on('end', function(){
+            data = JSON.parse(data);
+            data.items.forEach(function(item){
+                playlistTracks.push(item.track.uri);
+            });
+            if(data.next === null){
+                getRadioTracks();
+            } else {
+                getPlaylistTracks(offset + LIMIT);
+            }
+        });
+        if(res.statusCode !== 200) {
+            console.log("Error getting tracks from playlist. Status "+res.statusCode);
+            if(res.statusCode === 401){
+                oAuth.refresh();
+            }
+        }
+    });
+    addRequest.end();
+}
+
 function searchSpotify(searchStrings){
     var resultsCounter = 0;
     var results = [];
@@ -61,7 +107,10 @@ function searchSpotify(searchStrings){
             res.on('end', function(){
                 var result = JSON.parse(jsonResponse);
                 if (result.tracks.items.length) {
-                    results.push(encodeURIComponent(result.tracks.items[0].uri));
+                    var uri = result.tracks.items[0].uri;
+                    if(playlistTracks.indexOf(uri) === -1){ // avoid duplicates
+                        results.push(encodeURIComponent(uri));
+                    }
                 }
                 resultsCounter++;
                 if(resultsCounter === searchStrings.length){
@@ -74,11 +123,12 @@ function searchSpotify(searchStrings){
 }
 
 function addToPlaylist(results){
-    var accessToken;
-    try {
-        accessToken = fs.readFileSync('accessToken', 'utf8');
-    } catch (e){
-        oAuth.authenticate();
+    var accessToken = oAuth.getAccessToken();
+    if(accessToken === false){
+        return;
+    }
+    if(results.length === 0){
+        console.log('no new tracks to add');
         return;
     }
     var uris = results.join();
@@ -105,5 +155,5 @@ function addToPlaylist(results){
 }
 
 module.exports = {
-    getTracks: getTracks
+    getTracks: getRadioTracks
 }

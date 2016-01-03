@@ -71,7 +71,6 @@ function getToken(code, refresh){
             writeRefreshToken(responseJson.refresh_token);
             require('./main').getTracks();
         });
-        console.log(res.statusCode, JSON.stringify(res.headers));
     });
 
     tokenReq.end(data);
@@ -113,6 +112,15 @@ module.exports = {
             getToken(undefined, refreshToken);
         } catch (e){
             oAuth.authenticate();
+        }
+    },
+    getAccessToken: function(){
+        try {
+            var accessToken = fs.readFileSync('accessToken', 'utf8');
+            return accessToken;
+        } catch (e){
+            oAuth.authenticate();
+            return false;
         }
     }
 };
