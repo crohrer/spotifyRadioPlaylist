@@ -35,8 +35,10 @@ function getRadioTracks(){
             $('b').each(function(i, elem){
                 var $title = $(this);
                 var $artist = $title.next('i');
-                var string = $title.text() +' - '+ $artist.text();
-                tracks.push(string);
+                tracks.push({
+                    title: $title.text(),
+                    artist: $artist.text()
+                });
             });
             searchSpotify(tracks);
         });
@@ -102,13 +104,13 @@ function getPlaylistTracks(offset){
     addRequest.end();
 }
 
-function searchSpotify(searchStrings){
+function searchSpotify(tracks){
     var resultsCounter = 0;
     var results = [];
-    searchStrings.forEach(function(searchString){
+    tracks.forEach(function(track){
         var spotifySearchReq = https.request({
             hostname: "api.spotify.com",
-            path: "/v1/search?type=track&q=" + encodeURIComponent(searchString)
+        path: "/v1/search?type=track&q=" + encodeURIComponent(track.artist+' - '+track.title)
         }, function(res){
             var jsonResponse = '';
             res.on('data', function(chunk){
@@ -116,14 +118,21 @@ function searchSpotify(searchStrings){
             });
             res.on('end', function(){
                 var result = JSON.parse(jsonResponse);
-                if (result.tracks.items.length) {
-                    var uri = result.tracks.items[0].uri;
-                    if(playlistTracks.indexOf(uri) === -1){ // avoid duplicates
-                        results.push(encodeURIComponent(uri));
+                result.tracks.items.some(function(item){ // iterate all items and break on success (return true)
+                    var titleMatches = item.name == track.title;
+                    var artistMatches = item.artists.some(function(artist){
+                        return (track.artist.indexOf(artist.name) > -1);
+                    });
+                    if(!artistMatches || !titleMatches){
+                        return false;
                     }
-                }
+                    if(playlistTracks.indexOf(item.uri) === -1){ // avoid duplicates
+                        results.push(encodeURIComponent(item.uri));
+                    }
+                    return true;
+                });
                 resultsCounter++;
-                if(resultsCounter === searchStrings.length){
+                if(resultsCounter === tracks.length){
                     addToPlaylist(results);
                 }
             });
