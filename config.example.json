@@ -3,5 +3,9 @@
     "clientSecret": "",
     "userId": "",
     "playlistId": "",
+    "radioTrackserviceUrl": "http://fm4.orf.at/trackservicepopup/main",
+    "radioTitleSelector": "b",
+    "radioArtistSelector": "i",
+    "fm4": true,
     "localEnvironment": true
 }

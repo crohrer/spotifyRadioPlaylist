@@ -13,13 +13,15 @@ var playlistTracks = [];
 
 getAllPlaylistTracks();
 
-function getRadioTracks(){
+function getRadioTracks(trackserviceUrl){
     console.log('getting tracks from radio trackservice');
-    var trackserviceReq = http.request({
-        hostname: 'fm4.orf.at',
-        path: '/trackservicepopup/main'
-    }, function(res) {
+    var trackserviceReq = http.request(trackserviceUrl, function(res) {
         var html = '';
+        if(res.statusCode === 302){
+            console.log('following redirect to ' + res.headers.location);
+            getRadioTracks(res.headers.location);
+            return;
+        }
         if(res.statusCode !== 200){
             logger.log('Trackservice Error: Status '+res.statusCode);
             process.exit(1);
@@ -32,14 +34,22 @@ function getRadioTracks(){
         res.on('end', function() {
             var $ = cheerio.load(html);
             var tracks = [];
-            $('b').each(function(i, elem){
+            $(config.radioTitleSelector).each(function(i, elem){
                 var $title = $(this);
-                var $artist = $title.next('i');
+                var $artist;
+                if(config.fm4){ // special handling for weird html structure on fm4 trackservice
+                    $artist = $title.next(config.radioArtistSelector);
+                } else {
+                    $artist = $title.siblings(config.radioArtistSelector);
+                }
                 tracks.push({
                     title: $title.text(),
                     artist: $artist.text()
                 });
             });
+            if(tracks.length === 0){
+                logger.log('no tracks found on radio trackservice.');
+            }
             searchSpotify(tracks);
         });
     });
@@ -95,7 +105,7 @@ function getPlaylistTracks(offset){
                 playlistTracks.push(item.track.uri);
             });
             if(data.next === null){
-                getRadioTracks();
+                getRadioTracks(config.radioTrackserviceUrl);
             } else {
                 getPlaylistTracks(offset + LIMIT);
             }
