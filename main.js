@@ -34,17 +34,31 @@ function getRadioTracks(trackserviceUrl){
         res.on('end', function() {
             var $ = cheerio.load(html);
             var tracks = [];
-            $(config.radioTitleSelector).each(function(i, elem){
-                var $title = $(this);
-                var $artist;
-                if(config.fm4){ // special handling for weird html structure on fm4 trackservice
-                    $artist = $title.next(config.radioArtistSelector);
+            $(config.radioEntrySelector).each(function(i, elem){
+                var $entry = $(this);
+
+                var $title, $artist;
+                if (!config.searchLinear) {
+                    // Most other station playlists feature nested markup
+                    $title = $entry.find(config.radioTitleSelector);
+                    $artist = $entry.find(config.radioArtistSelector);
                 } else {
-                    $artist = $title.siblings(config.radioArtistSelector);
+                    // Stations like ORF FM4 have strange markup and need linear search
+                    $title = $entry.nextAll(config.radioTitleSelector).first();
+                    $artist = $entry.nextAll(config.radioArtistSelector).first();
                 }
+
+                $title = $title.text().trim();
+                $artist = $artist.text().trim();
+
+                String.prototype.isEmpty = function() { return (!this || !this.length); }
+                if ($title.isEmpty() || $artist.isEmpty())
+                    return;
+
+                //logger.log("Found track: " + $title + " by " + $artist);
                 tracks.push({
-                    title: $title.text(),
-                    artist: $artist.text()
+                    title: $title,
+                    artist: $artist
                 });
             });
             if(tracks.length === 0){
