@@ -17,7 +17,7 @@ You can obtain a clientId & clientSecret by [registering a new application](http
 4. Run `node main.js`
 5. Open the displayed URL in your browser & grant permission for your app to change your playlists. This will open a page on localhost which you can close. Now you find two new files: `accessToken` and `refreshToken`. They contain the secret information to authenticate the user with spotify, so handle with care!
 
-This should have added the first tracks to your playlist already. Every time you run `node main.js` again, the script will check if there are [new tracks](fm4.orf.at/trackservicepopup/main) that have not been added to the playlist yet.
+This should have added the first tracks to your playlist already. Every time you run `node main.js` again, the script will check if there are [new tracks](http://fm4.orf.at/trackservicepopup/main) that have not been added to the playlist yet.
 
 You may want to run this on a server via cronjob every 20min or so.
 
