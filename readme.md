@@ -2,6 +2,8 @@
 
 Putting the latest tracks from a radio station with online trackservice (like [this one](http://fm4.orf.at/trackservicepopup/main)) onto a spotify playlist.
 
+More on the background of this project in my [blog post](http://blog.chrisrohrer.de/radio-to-spotify-playlist/).
+
 ## Demo
 
 Currently running every 20min via cronjob on [this playlist](https://play.spotify.com/user/radiolistenerbot/playlist/6prQq7S9saObANcQOddSTh)
