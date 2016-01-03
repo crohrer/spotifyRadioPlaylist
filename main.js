@@ -8,10 +8,10 @@ var cheerio = require('cheerio');
 var oAuth = require('./oAuth');
 var fs = require('fs');
 var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-var userSecret = '';
+var accessToken = '';
 
 try {
-    userSecret = fs.readFileSync('userSecret', 'utf8');
+    accessToken = fs.readFileSync('accessToken', 'utf8');
 } catch (e){
     oAuth.authenticate();
     return;
@@ -78,7 +78,7 @@ function searchSpotify(searchStrings){
 }
 
 function addToPlaylist(results){
-    if(userSecret === ''){
+    if(accessToken === ''){
         oAuth.authenticate();
         return;
     }
@@ -88,12 +88,12 @@ function addToPlaylist(results){
         path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?position=0&uris='+uris,
         method: 'POST',
         headers: {
-            'Authorization': 'Bearer '+ userSecret,
+            'Authorization': 'Bearer '+ accessToken,
             'Accept': 'application/json'
         }
     }, function(res){
         if(res.statusCode === 201){
-            console.log('Success! Added '+ results.length + 'tracks.');
+            console.log('Success! Added '+ results.length + ' tracks.');
         } else {
             console.log("Error adding to playlist. Status "+res.statusCode);
         }

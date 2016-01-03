@@ -38,26 +38,41 @@ function getToken(code){
         redirect_uri: REDIRECT_URI
     });
     var tokenReq = https.request({
-        hostname: 'api.spotify.com',
-        path: '/api/token?'+data,
+        hostname: 'accounts.spotify.com',
+        path: '/api/token',
         method: 'POST',
         headers: {
-            'Authorization': authString
+            'Authorization': authString,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': Buffer.byteLength(data)
         }
     }, function(res){
+        var body = '';
         res.on('data', function(chunk){
-            console.log(new Buffer(chunk).toString());
+            body += new Buffer(chunk).toString();
         });
+        res.on('end', function(){
+            var responseJson = JSON.parse(body);
+            writeAccessToken(responseJson.access_token);
+            writeRefreshToken(responseJson.refresh_token);
+        })
         console.log(res.statusCode, JSON.stringify(res.headers));
     });
 
-    tokenReq.end();
+    tokenReq.end(data);
 }
 
-function writeSecret(secret){
-    fs.writeFile('userSecret', secret, function (err) {
+function writeAccessToken(token){
+    fs.writeFile('accessToken', token, function (err) {
         if (err) throw err;
-        console.log('It\'s saved!');
+        console.log('accessToken saved!');
+    });
+}
+
+function writeRefreshToken(token){
+    fs.writeFile('refreshToken', token, function (err) {
+        if (err) throw err;
+        console.log('refreshToken saved!');
     });
 }
 
