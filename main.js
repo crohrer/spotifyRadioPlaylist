@@ -8,47 +8,43 @@ var cheerio = require('cheerio');
 var oAuth = require('./oAuth');
 var fs = require('fs');
 var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-var accessToken = '';
 
-try {
-    accessToken = fs.readFileSync('accessToken', 'utf8');
-} catch (e){
-    oAuth.authenticate();
-    return;
-}
+getTracks();
 
-// get tracks from radio trackservice
-var trackserviceReq = http.request({
-    hostname: 'fm4.orf.at',
-    path: '/trackservicepopup/main'
-}, function(res) {
-    var html = '';
-    if(res.statusCode !== 200){
-        console.log('Trackservice Error: Status '+res.statusCode);
-        return;
-    }
-    res.setEncoding('utf8');
-    res.on('data', function (chunk) {
-        html += chunk;
-    });
-    res.on('end', function() {
-        var $ = cheerio.load(html);
-        var tracks = [];
-        $('b').each(function(i, elem){
-            var $title = $(this);
-            var $artist = $title.next('i');
-            var string = $title.text() +' - '+ $artist.text();
-            tracks.push(string);
+function getTracks(){
+    // get tracks from radio trackservice
+    var trackserviceReq = http.request({
+        hostname: 'fm4.orf.at',
+        path: '/trackservicepopup/main'
+    }, function(res) {
+        var html = '';
+        if(res.statusCode !== 200){
+            console.log('Trackservice Error: Status '+res.statusCode);
+            return;
+        }
+        res.setEncoding('utf8');
+        res.on('data', function (chunk) {
+            html += chunk;
         });
-        searchSpotify(tracks);
+        res.on('end', function() {
+            var $ = cheerio.load(html);
+            var tracks = [];
+            $('b').each(function(i, elem){
+                var $title = $(this);
+                var $artist = $title.next('i');
+                var string = $title.text() +' - '+ $artist.text();
+                tracks.push(string);
+            });
+            searchSpotify(tracks);
+        });
     });
-});
 
-trackserviceReq.on('error', function(e) {
-    console.log('problem with request: ' + e.message);
-});
+    trackserviceReq.on('error', function(e) {
+        console.log('problem with request: ' + e.message);
+    });
 
-trackserviceReq.end();
+    trackserviceReq.end();
+}
 
 function searchSpotify(searchStrings){
     var resultsCounter = 0;
@@ -78,7 +74,10 @@ function searchSpotify(searchStrings){
 }
 
 function addToPlaylist(results){
-    if(accessToken === ''){
+    var accessToken;
+    try {
+        accessToken = fs.readFileSync('accessToken', 'utf8');
+    } catch (e){
         oAuth.authenticate();
         return;
     }
@@ -96,8 +95,15 @@ function addToPlaylist(results){
             console.log('Success! Added '+ results.length + ' tracks.');
         } else {
             console.log("Error adding to playlist. Status "+res.statusCode);
+            if(res.statusCode === 401){
+                oAuth.refresh();
+            }
         }
 
     });
     addRequest.end();
+}
+
+module.exports = {
+    getTracks: getTracks
 }

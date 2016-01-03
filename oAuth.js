@@ -29,14 +29,28 @@ function handleRequest(request, response){
     });
 }
 
-function getToken(code){
+/**
+ * one of the params is required!
+ * @param code authCode or undefined
+ * @param refresh refreshToken or undefined
+ */
+function getToken(code, refresh){
+    var jsonData;
+    if(refresh){
+        jsonData = {
+            grant_type: "refresh_token",
+            refresh_token: refresh
+        };
+    } else {
+        jsonData = {
+            grant_type: "authorization_code",
+            code: code,
+            redirect_uri: REDIRECT_URI
+        };
+    }
     var idAndSecret = config.clientId+':'+config.clientSecret;
     var authString = 'Basic ' + new Buffer(idAndSecret).toString('base64');
-    var data = querystring.stringify({
-        grant_type: "authorization_code",
-        code: code,
-        redirect_uri: REDIRECT_URI
-    });
+    var data = querystring.stringify(jsonData);
     var tokenReq = https.request({
         hostname: 'accounts.spotify.com',
         path: '/api/token',
@@ -55,7 +69,8 @@ function getToken(code){
             var responseJson = JSON.parse(body);
             writeAccessToken(responseJson.access_token);
             writeRefreshToken(responseJson.refresh_token);
-        })
+            require('./main').getTracks();
+        });
         console.log(res.statusCode, JSON.stringify(res.headers));
     });
 
@@ -63,17 +78,20 @@ function getToken(code){
 }
 
 function writeAccessToken(token){
-    fs.writeFile('accessToken', token, function (err) {
-        if (err) throw err;
-        console.log('accessToken saved!');
-    });
+    writeFile('accessToken', token);
 }
 
 function writeRefreshToken(token){
-    fs.writeFile('refreshToken', token, function (err) {
-        if (err) throw err;
-        console.log('refreshToken saved!');
-    });
+    writeFile('refreshToken', token);
+}
+
+function writeFile(name, content){
+    if(content){
+        fs.writeFile(name, content, function (err) {
+            if (err) throw err;
+            console.log(name + ' saved!');
+        });
+    }
 }
 
 module.exports = {
@@ -87,5 +105,14 @@ module.exports = {
             });
             console.log('Please log in first: https://accounts.spotify.com/authorize?'+query);
         });
+    },
+    refresh: function(){
+        try {
+            var refreshToken = fs.readFileSync('refreshToken', 'utf8');
+            console.log('refreshing token...');
+            getToken(undefined, refreshToken);
+        } catch (e){
+            oAuth.authenticate();
+        }
     }
 };
