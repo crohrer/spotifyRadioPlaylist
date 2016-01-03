@@ -42,9 +42,11 @@ function getRadioTracks(trackserviceUrl){
                 } else {
                     $artist = $title.siblings(config.radioArtistSelector);
                 }
+                var title = $title.text().replace(/^\s-\s/, ''); // fix for fluxFM
+                var artist = $artist.text().replace(/^\s-\s/, '');
                 tracks.push({
-                    title: $title.text(),
-                    artist: $artist.text()
+                    title: title,
+                    artist: artist
                 });
             });
             if(tracks.length === 0){
@@ -77,7 +79,7 @@ function getPlaylistTracks(offset){
         console.log('empty accessToken');
         return;
     }
-    var addRequest = https.request({
+    var playlistRequest = https.request({
         hostname: 'api.spotify.com',
         path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?fields=next,items.track.uri&limit='+LIMIT+'&offset='+offset,
         method: 'GET',
@@ -88,6 +90,9 @@ function getPlaylistTracks(offset){
     }, function(res){
         var data = '';
         if(res.statusCode !== 200) {
+            if (handleRateLimit(res, function(){
+                    addToPlaylist(results);
+                })){ return; }
             if(res.statusCode === 401){
                 oAuth.refresh();
             } else {
@@ -111,47 +116,66 @@ function getPlaylistTracks(offset){
             }
         });
     });
-    addRequest.end();
+    playlistRequest.end();
 }
 
 function searchSpotify(tracks){
-    var resultsCounter = 0;
+    var PLAYLIST_ADD_LIMIT = 40; // limit how many tracks will be added in one request
+    var responseCounter = 0;
     var results = [];
-    tracks.forEach(function(track){
+    tracks.forEach(function(track, i){
+        setTimeout(function(){
+            sendSearchRequest(track);
+        }, i * 100); // timeout so we don't run into limits that fast
+    });
+
+    function sendSearchRequest(track){
         var spotifySearchReq = https.request({
             hostname: "api.spotify.com",
-        path: "/v1/search?type=track&q=" + encodeURIComponent(track.artist+' - '+track.title)
+            path: "/v1/search?type=track&q=" + encodeURIComponent(track.artist+' - '+track.title)
         }, function(res){
+            if (handleRateLimit(res, 'searching track', function(){
+                    sendSearchRequest(track);
+                })) { return; }
             var jsonResponse = '';
             res.on('data', function(chunk){
                 jsonResponse += chunk;
             });
             res.on('end', function(){
                 var result = JSON.parse(jsonResponse);
-                result.tracks.items.some(function(item){ // iterate all items and break on success (return true)
-                    var titleMatches = item.name == track.title;
-                    var artistMatches = item.artists.some(function(artist){
-                        return (track.artist.indexOf(artist.name) > -1);
+                if(result.tracks && result.tracks.items){
+                    result.tracks.items.some(function(item){ // iterate all items and break on success (return true)
+                        var titleMatches = item.name == track.title;
+                        var artistMatches = item.artists.some(function(artist){
+                            return (track.artist.indexOf(artist.name) > -1);
+                        });
+                        if(!artistMatches || !titleMatches){
+                            return false;
+                        }
+                        if(playlistTracks.indexOf(item.uri) === -1){ // avoid duplicates
+                            results.push(encodeURIComponent(item.uri));
+                        }
+                        return true;
                     });
-                    if(!artistMatches || !titleMatches){
-                        return false;
-                    }
-                    if(playlistTracks.indexOf(item.uri) === -1){ // avoid duplicates
-                        results.push(encodeURIComponent(item.uri));
-                    }
-                    return true;
-                });
-                resultsCounter++;
-                if(resultsCounter === tracks.length){
-                    addToPlaylist(results);
+                }
+                responseCounter++;
+                var isLastSearchRequest = (responseCounter === tracks.length)
+                if(isLastSearchRequest || results.length === PLAYLIST_ADD_LIMIT){
+                    addToPlaylist(results, isLastSearchRequest);
+                    results = [];
                 }
             });
         });
         spotifySearchReq.end();
-    });
+    }
 }
 
-function addToPlaylist(results){
+/**
+ *
+ * @param results
+ * @param [lastCall] use this if this is the last call to this function, so the program can be stopped afterwards.
+ */
+function addToPlaylist(results, lastCall){
     var accessToken = oAuth.getAccessToken();
     if(accessToken === false){
         return;
@@ -173,9 +197,14 @@ function addToPlaylist(results){
     }, function(res){
         if(res.statusCode === 201){
             logger.log('Success! Added '+ results.length + ' tracks.');
-            process.exit();
+            if(lastCall){
+                process.exit();
+            }
             return;
         } else {
+            if (handleRateLimit(res, 'adding to playlist', function(){
+                    addToPlaylist(results, lastCall);
+                })){ return; }
             if(res.statusCode === 401){
                 oAuth.refresh();
             } else {
@@ -187,6 +216,15 @@ function addToPlaylist(results){
 
     });
     addRequest.end();
+}
+function handleRateLimit(res, description, callback){
+    if(res.statusCode === 429) {
+        logger.log('limit exceeded for '+description+'. Trying again after '+res.headers['retry-after']+'.5s.');
+        setTimeout(callback, res.headers['retry-after'] * 1000 + 500);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 module.exports = {
