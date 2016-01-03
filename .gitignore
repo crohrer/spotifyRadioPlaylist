@@ -2,3 +2,4 @@
 config.json
 accessToken
 refreshToken
+application.log

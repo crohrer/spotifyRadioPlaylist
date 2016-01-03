@@ -6,6 +6,7 @@ var http = require('http');
 var https = require('https');
 var cheerio = require('cheerio');
 var oAuth = require('./oAuth');
+var logger = require('./logger');
 var fs = require('fs');
 var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 var playlistTracks = [];
@@ -20,7 +21,7 @@ function getRadioTracks(){
     }, function(res) {
         var html = '';
         if(res.statusCode !== 200){
-            console.log('Trackservice Error: Status '+res.statusCode);
+            logger.log('Trackservice Error: Status '+res.statusCode);
             return;
         }
         res.setEncoding('utf8');
@@ -41,7 +42,7 @@ function getRadioTracks(){
     });
 
     trackserviceReq.on('error', function(e) {
-        console.log('problem with trackservice request: ' + e.message);
+        logger.log('problem with trackservice request: ' + e.message);
     });
 
     trackserviceReq.end();
@@ -73,9 +74,10 @@ function getPlaylistTracks(offset){
     }, function(res){
         var data = '';
         if(res.statusCode !== 200) {
-            console.log("Error getting tracks from playlist. Status "+res.statusCode);
             if(res.statusCode === 401){
                 oAuth.refresh();
+            } else {
+                logger.log("Error getting tracks from playlist. Status "+res.statusCode);
             }
             return;
         }
@@ -133,7 +135,7 @@ function addToPlaylist(results){
         return;
     }
     if(results.length === 0){
-        console.log('no new tracks to add');
+        logger.log('no new tracks to add');
         return;
     }
     var uris = results.join();
@@ -147,11 +149,12 @@ function addToPlaylist(results){
         }
     }, function(res){
         if(res.statusCode === 201){
-            console.log('Success! Added '+ results.length + ' tracks.');
+            logger.log('Success! Added '+ results.length + ' tracks.');
         } else {
-            console.log("Error adding to playlist. Status "+res.statusCode);
             if(res.statusCode === 401){
                 oAuth.refresh();
+            } else {
+                logger.log("Error adding to playlist. Status "+res.statusCode);
             }
         }
 
