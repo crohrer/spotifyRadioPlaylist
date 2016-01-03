@@ -105,7 +105,7 @@ function getPlaylistTracks(offset){
         var data = '';
         if(res.statusCode !== 200) {
             if (handleRateLimit(res, function(){
-                    addToPlaylist(results);
+                    getPlaylistTracks(offset);
                 })){ return; }
             if(res.statusCode === 401){
                 oAuth.refresh();
