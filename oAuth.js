@@ -95,6 +95,7 @@ module.exports = {
     authenticate: function(){
         if(!config.localEnvironment){
             logger.log('oAuth must be carried out locally. Please copy accessToken and refreshToken onto your server afterwards.');
+            process.exit(1);
             return;
         }
         server.listen(PORT, function(){

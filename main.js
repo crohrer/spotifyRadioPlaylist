@@ -22,6 +22,7 @@ function getRadioTracks(){
         var html = '';
         if(res.statusCode !== 200){
             logger.log('Trackservice Error: Status '+res.statusCode);
+            process.exit(1);
             return;
         }
         res.setEncoding('utf8');
@@ -43,6 +44,7 @@ function getRadioTracks(){
 
     trackserviceReq.on('error', function(e) {
         logger.log('problem with trackservice request: ' + e.message);
+        process.exit(1);
     });
 
     trackserviceReq.end();
@@ -78,6 +80,7 @@ function getPlaylistTracks(offset){
                 oAuth.refresh();
             } else {
                 logger.log("Error getting tracks from playlist. Status "+res.statusCode);
+                process.exit(1);
             }
             return;
         }
@@ -136,6 +139,7 @@ function addToPlaylist(results){
     }
     if(results.length === 0){
         logger.log('no new tracks to add');
+        process.exit();
         return;
     }
     var uris = results.join();
@@ -150,11 +154,15 @@ function addToPlaylist(results){
     }, function(res){
         if(res.statusCode === 201){
             logger.log('Success! Added '+ results.length + ' tracks.');
+            process.exit();
+            return;
         } else {
             if(res.statusCode === 401){
                 oAuth.refresh();
             } else {
                 logger.log("Error adding to playlist. Status "+res.statusCode);
+                process.exit(1);
+                return;
             }
         }
 
@@ -164,4 +172,4 @@ function addToPlaylist(results){
 
 module.exports = {
     getTracks: getAllPlaylistTracks
-}
+};
