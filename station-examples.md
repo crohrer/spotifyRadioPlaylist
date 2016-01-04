@@ -56,3 +56,10 @@ This radio station needs the linear search.
     "radioArtistSelector": "td:nth-child(3)",
     "searchLinear": false,
     
+## SWR1
+
+    "radioTrackserviceUrl": "http://www.swr.de/swr1/bw/musikrecherche/",
+    "radioEntrySelector": ".musicItemText",
+    "radioTitleSelector": "h3",
+    "radioArtistSelector": "p",
+    "searchLinear": false,
