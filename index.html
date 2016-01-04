@@ -39,9 +39,8 @@
 <ol>
 <li>Clone this repo into a local directory</li>
 <li>Copy <code>config.example.json</code> to <code>config.json</code> and insert your own credentials &amp; radio station.
-You can obtain a clientId &amp; clientSecret by <a href="https://developer.spotify.com/my-applications/#!/applications">registering a new application</a>.
-You can use the predefined radio settings for <a href="http://fm4.orf.at">Radio FM4</a> or define settings for your own radio station. You need a URL to a page that lists the recently played tracks and a jQuery style selector for title and artist. I added a flag for FM4s weird HTML markup - this should be set to false for others.
-I have tested only <a href="http://www.novaplanet.com/radionova">one other radio station</a>, so this may require some adjustments in the code for other stations.</li>
+You can obtain a clientId &amp; clientSecret by <a href="https://developer.spotify.com/my-applications/#!/applications">registering a new application</a>.<br>
+There are some pre-defined and tested radio stations, they can be found in <code>station-examples.md</code>. You can define your own schemes, all you need is the URL of the playlist page of the station and three jQuery selectors: one for the playlist entry element, one for the title and one for the artist. Some radio stations (like FM4) have special markup that requires linear instead of nested search; this behaviour can be set with the <code>searchLinear</code> flag.</li>
 <li>Run <code>npm install</code>
 </li>
 <li>Run <code>node main.js</code>
