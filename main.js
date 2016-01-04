@@ -13,6 +13,10 @@ var playlistTracks = [];
 
 getAllPlaylistTracks();
 
+/**
+ * getRadioTracks
+ * @param {string} trackserviceUrl
+ */
 function getRadioTracks(trackserviceUrl){
     console.log('getting tracks from radio trackservice');
     var trackserviceReq = http.request(trackserviceUrl, function(res) {
@@ -35,9 +39,12 @@ function getRadioTracks(trackserviceUrl){
             var $ = cheerio.load(html);
             var tracks = [];
             $(config.radioEntrySelector).each(function(i, elem){
-                var $entry = $(this);
+                var $entry = $(this),
+                    $title, // cheerio-object
+                    $artist, // cheerio-object
+                    title, // string
+                    artist; // string
 
-                var $title, $artist;
                 if (!config.searchLinear) {
                     // Most other station playlists feature nested markup
                     $title = $entry.find(config.radioTitleSelector);
@@ -48,19 +55,18 @@ function getRadioTracks(trackserviceUrl){
                     $artist = $entry.nextAll(config.radioArtistSelector).first();
                 }
 
-                String.prototype.trimEx = function() { return this.trim().replace(/^\s?-\s/, ''); }
-                $title = $title.text().trimEx();
-                $artist = $artist.text().trimEx();
+                String.prototype.trimEx = function() { return this.trim().replace(/^\s?-\s/, '').toUpperCase(); } // we compare our strings later in uppercase
+                title = $title.text().trimEx();
+                artist = $artist.text().trimEx();
 
                 String.prototype.isEmpty = function() { return (!this || !this.length); }
-                if ($title.isEmpty() || $artist.isEmpty())
+                if (title.isEmpty() || artist.isEmpty()){
                     return;
-
-                //logger.log("Found track: " + $title + " by " + $artist);
+                }
 
                 tracks.push({
-                    title: $title,
-                    artist: $artist
+                    title: title,
+                    artist: artist
                 });
             });
             if(tracks.length === 0){
@@ -82,6 +88,10 @@ function getAllPlaylistTracks(){
     getPlaylistTracks(0);
 }
 
+/**
+ * getPlaylistTracks
+ * @param {int} offset - 0 for first page
+ */
 function getPlaylistTracks(offset){
     var LIMIT = 100;
     console.log('getting next '+LIMIT+' tracks from playlist...');
@@ -133,7 +143,12 @@ function getPlaylistTracks(offset){
     playlistRequest.end();
 }
 
+/**
+ * searchSpotify
+ * @param {Array} tracks
+ */
 function searchSpotify(tracks){
+    console.log(tracks);
     var PLAYLIST_ADD_LIMIT = 40; // limit how many tracks will be added in one request
     var responseCounter = 0;
     var results = [];
@@ -143,6 +158,12 @@ function searchSpotify(tracks){
         }, i * 100); // timeout so we don't run into limits that fast
     });
 
+    /**
+     * sendSearchRequest
+     * @param {object} track
+     * @param {string} track.artist in UPPERCASE
+     * @param {string} track.title in UPPERCASE
+     */
     function sendSearchRequest(track){
         var spotifySearchReq = https.request({
             hostname: "api.spotify.com",
@@ -159,9 +180,9 @@ function searchSpotify(tracks){
                 var result = JSON.parse(jsonResponse);
                 if(result.tracks && result.tracks.items){
                     result.tracks.items.some(function(item){ // iterate all items and break on success (return true)
-                        var titleMatches = item.name == track.title;
+                        var titleMatches = item.name.toUpperCase() == track.title;
                         var artistMatches = item.artists.some(function(artist){
-                            return (track.artist.indexOf(artist.name) > -1);
+                            return (track.artist.indexOf(artist.name.toUpperCase()) > -1);
                         });
                         if(!artistMatches || !titleMatches){
                             return false;
@@ -185,7 +206,7 @@ function searchSpotify(tracks){
 }
 
 /**
- *
+ * addToPlaylist
  * @param results
  * @param [lastCall] use this if this is the last call to this function, so the program can be stopped afterwards.
  */
@@ -231,6 +252,14 @@ function addToPlaylist(results, lastCall){
     });
     addRequest.end();
 }
+
+/**
+ * handleRateLimit
+ * @param {object} res ResponseObject
+ * @param {string} description Text that describes when RateLimit was exceeded - mainly for logging
+ * @param {function} callback this will be called after waiting. Use this to retry what you did when Limit was exceeded
+ * @returns {boolean} true when limit was exceeded, otherwise false
+ */
 function handleRateLimit(res, description, callback){
     if(res.statusCode === 429) {
         logger.log('limit exceeded for '+description+'. Trying again after '+res.headers['retry-after']+'.5s.');
