@@ -148,7 +148,6 @@ function getPlaylistTracks(offset){
  * @param {Array} tracks
  */
 function searchSpotify(tracks){
-    console.log(tracks);
     var PLAYLIST_ADD_LIMIT = 40; // limit how many tracks will be added in one request
     var responseCounter = 0;
     var results = [];
