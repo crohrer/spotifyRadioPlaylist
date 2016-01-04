@@ -71,6 +71,8 @@ function getRadioTracks(trackserviceUrl){
             });
             if(tracks.length === 0){
                 logger.log('no tracks found on radio trackservice.');
+                return;
+                process.exit(1);
             }
             searchSpotify(tracks);
         });
