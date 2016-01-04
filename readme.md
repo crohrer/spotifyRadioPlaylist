@@ -29,3 +29,9 @@ You may want to run this on a server via cronjob every X minutes or so (dependin
 3. Copy your local `config.json` onto the server and change the last entry to `"localEnvironment": false`
 4. Run `npm install`
 5. Configure your cronjob to run `node main.js` every X minutes (don't forget to change to the correct directory first!)
+
+## Updates
+
+To update run `git pull` in your installation and you will get the latest changes. 
+
+Please note: Upgrading a Patch release (like from 2.2.0 to 2.2.1) will work with your existing config-file, upgrading a Major or Minor release might make it neccessary to upgrade your configuration. Please read the release notes and refer to the `config.example.json` file.
