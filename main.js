@@ -11,6 +11,7 @@ var fs = require('fs');
 var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 var playlistTracks = [];
 
+// starting the procedure
 getAllPlaylistTracks();
 
 /**
@@ -21,6 +22,7 @@ function getRadioTracks(trackserviceUrl){
     console.log('getting tracks from radio trackservice');
     var trackserviceReq = http.request(trackserviceUrl, function(res) {
         var html = '';
+
         if(res.statusCode === 302){
             console.log('following redirect to ' + res.headers.location);
             getRadioTracks(res.headers.location);
@@ -31,28 +33,31 @@ function getRadioTracks(trackserviceUrl){
             process.exit(1);
             return;
         }
+
         res.setEncoding('utf8');
         res.on('data', function (chunk) {
             html += chunk;
         });
         res.on('end', function() {
-            var $ = cheerio.load(html);
-            var tracks = [];
+            var $ = cheerio.load(html),
+                tracks = [];
+
             $(config.radioEntrySelector).each(function(i, elem){
                 var $entry = $(this),
+                    isUnique = true,
                     $title, // cheerio-object
                     $artist, // cheerio-object
                     title, // string
                     artist; // string
 
-                if (!config.searchLinear) {
-                    // Most other station playlists feature nested markup
-                    $title = $entry.find(config.radioTitleSelector);
-                    $artist = $entry.find(config.radioArtistSelector);
-                } else {
+                if (config.searchLinear) {
                     // Stations like ORF FM4 have strange markup and need linear search
                     $title = $entry.nextAll(config.radioTitleSelector).first();
                     $artist = $entry.nextAll(config.radioArtistSelector).first();
+                } else {
+                    // Most other station playlists feature nested markup
+                    $title = $entry.find(config.radioTitleSelector);
+                    $artist = $entry.find(config.radioArtistSelector);
                 }
 
                 String.prototype.trimEx = function() { return this.trim().replace(/^\s?-\s/, '').toUpperCase(); } // we compare our strings later in uppercase
@@ -64,16 +69,27 @@ function getRadioTracks(trackserviceUrl){
                     return;
                 }
 
-                tracks.push({
-                    title: title,
-                    artist: artist
+                // check for duplicates
+                tracks.forEach(function(track){
+                    if(track.artist + '-' + track.title === artist + '-' + title){
+                        isUnique = false;
+                    }
                 });
+
+                if(isUnique){
+                    tracks.push({
+                        title: title,
+                        artist: artist
+                    });
+                }
             });
+
             if(tracks.length === 0){
                 logger.log('no tracks found on radio trackservice.');
                 return;
                 process.exit(1);
             }
+
             searchSpotify(tracks);
         });
     });
@@ -97,15 +113,14 @@ function getAllPlaylistTracks(){
 function getPlaylistTracks(offset){
     var LIMIT = 100;
     console.log('getting next '+LIMIT+' tracks from playlist...');
-    var accessToken = oAuth.getAccessToken();
-    if(accessToken === false){
+    var accessToken = oAuth.getAccessToken(),
+        playlistRequest;
+
+    if(accessToken === false || accessToken === ''){
         return;
     }
-    if(accessToken === ''){
-        console.log('empty accessToken');
-        return;
-    }
-    var playlistRequest = https.request({
+
+    playlistRequest = https.request({
         hostname: 'api.spotify.com',
         path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?fields=next,items.track.uri&limit='+LIMIT+'&offset='+offset,
         method: 'GET',
@@ -115,18 +130,22 @@ function getPlaylistTracks(offset){
         }
     }, function(res){
         var data = '';
+
         if(res.statusCode !== 200) {
             if (handleRateLimit(res, function(){
                     getPlaylistTracks(offset);
                 })){ return; }
+
             if(res.statusCode === 401){
                 oAuth.refresh();
             } else {
                 logger.log("Error getting tracks from playlist. Status "+res.statusCode);
                 process.exit(1);
             }
+
             return;
         }
+
         res.on('data', function(chunk){
             data += chunk;
         });
@@ -135,6 +154,7 @@ function getPlaylistTracks(offset){
             data.items.forEach(function(item){
                 playlistTracks.push(item.track.uri);
             });
+
             if(data.next === null){
                 getRadioTracks(config.radioTrackserviceUrl);
             } else {
@@ -142,6 +162,7 @@ function getPlaylistTracks(offset){
             }
         });
     });
+
     playlistRequest.end();
 }
 
@@ -150,9 +171,10 @@ function getPlaylistTracks(offset){
  * @param {Array} tracks
  */
 function searchSpotify(tracks){
-    var PLAYLIST_ADD_LIMIT = 40; // limit how many tracks will be added in one request
-    var responseCounter = 0;
-    var results = [];
+    var PLAYLIST_ADD_LIMIT = 40, // limit how many tracks will be added in one request
+        responseCounter = 0,
+        results = [];
+
     tracks.forEach(function(track, i){
         setTimeout(function(){
             sendSearchRequest(track);
@@ -173,35 +195,42 @@ function searchSpotify(tracks){
             if (handleRateLimit(res, 'searching track', function(){
                     sendSearchRequest(track);
                 })) { return; }
+
             var jsonResponse = '';
             res.on('data', function(chunk){
                 jsonResponse += chunk;
             });
             res.on('end', function(){
-                var result = JSON.parse(jsonResponse);
+                var result = JSON.parse(jsonResponse),
+                    isLastSearchRequest;
+
                 if(result.tracks && result.tracks.items){
                     result.tracks.items.some(function(item){ // iterate all items and break on success (return true)
-                        var titleMatches = item.name.toUpperCase() == track.title;
-                        var artistMatches = item.artists.some(function(artist){
-                            return (track.artist.indexOf(artist.name.toUpperCase()) > -1);
-                        });
+                        var titleMatches = item.name.toUpperCase() == track.title,
+                            artistMatches = item.artists.some(function(artist){
+                                return (track.artist.indexOf(artist.name.toUpperCase()) > -1);
+                            });
+
                         if(!artistMatches || !titleMatches){
                             return false;
                         }
                         if(playlistTracks.indexOf(item.uri) === -1){ // avoid duplicates
                             results.push(encodeURIComponent(item.uri));
                         }
-                        return true;
+                        return true; // stops searching, when we believe this is the song we were looking for
                     });
                 }
+
                 responseCounter++;
-                var isLastSearchRequest = (responseCounter === tracks.length)
+                isLastSearchRequest = (responseCounter === tracks.length);
+
                 if(isLastSearchRequest || results.length === PLAYLIST_ADD_LIMIT){
                     addToPlaylist(results, isLastSearchRequest);
                     results = [];
                 }
             });
         });
+
         spotifySearchReq.end();
     }
 }
@@ -212,7 +241,10 @@ function searchSpotify(tracks){
  * @param [lastCall] use this if this is the last call to this function, so the program can be stopped afterwards.
  */
 function addToPlaylist(results, lastCall){
-    var accessToken = oAuth.getAccessToken();
+    var accessToken = oAuth.getAccessToken(),
+        uris,
+        addRequest;
+
     if(accessToken === false){
         return;
     }
@@ -221,8 +253,10 @@ function addToPlaylist(results, lastCall){
         process.exit();
         return;
     }
-    var uris = results.join();
-    var addRequest = https.request({
+
+    uris = results.join();
+
+    addRequest = https.request({
         hostname: 'api.spotify.com',
         path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?position=0&uris='+uris,
         method: 'POST',
@@ -241,6 +275,7 @@ function addToPlaylist(results, lastCall){
             if (handleRateLimit(res, 'adding to playlist', function(){
                     addToPlaylist(results, lastCall);
                 })){ return; }
+
             if(res.statusCode === 401){
                 oAuth.refresh();
             } else {
@@ -251,6 +286,7 @@ function addToPlaylist(results, lastCall){
         }
 
     });
+
     addRequest.end();
 }
 
