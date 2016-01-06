@@ -63,3 +63,11 @@ This radio station needs the linear search.
     "radioTitleSelector": "h3",
     "radioArtistSelector": "p",
     "searchLinear": false,
+
+## Radio Swiss Jazz
+
+    "radioTrackserviceUrl": "http://www.radioswissjazz.ch/de/musikprogramm",
+    "radioEntrySelector": ".playlist>.item-row",
+    "radioTitleSelector": ".titletag",
+    "radioArtistSelector": ".artist",
+    "searchLinear": false,
