@@ -20,7 +20,7 @@ function handleRequest(request, response){
     });
     request.on('end', function () {
         var queryObject = url.parse(request.url, true).query;
-        response.end(JSON.stringify(queryObject));
+        response.end('You can close this Window now.');
 
         if(queryObject.code){ // this is the authorization code
             getToken(queryObject.code);
@@ -69,7 +69,7 @@ function getToken(code, refresh){
             var responseJson = JSON.parse(body);
             writeAccessToken(responseJson.access_token);
             writeRefreshToken(responseJson.refresh_token);
-            require('./main').getTracks();
+            require('./main').start();
         });
     });
 
