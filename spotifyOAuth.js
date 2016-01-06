@@ -12,6 +12,46 @@ var server = http.createServer(handleRequest);
 var PORT = 8585;
 var REDIRECT_URI = 'http://localhost:'+PORT;
 var SCOPES = 'playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private';
+var spotifyOAuth = {
+    authenticate: function(){
+        if(!config.localEnvironment){
+            logger.log('oAuth must be carried out locally. Please copy accessToken and refreshToken onto your server afterwards.');
+            process.exit(1);
+            return;
+        }
+        server.listen(PORT, function(){
+            var query = querystring.stringify({
+                client_id: config.clientId,
+                response_type: 'code',
+                scope: SCOPES,
+                redirect_uri: REDIRECT_URI
+            });
+            console.log('Please log in first: https://accounts.spotify.com/authorize?'+query);
+        });
+    },
+    refresh: function(){
+        try {
+            console.log('refreshing token...');
+            var refreshToken = fs.readFileSync('refreshToken', 'utf8');
+            getToken(undefined, refreshToken);
+        } catch (e){
+            console.log('no refreshToken found');
+            oAuth.authenticate();
+        }
+    },
+    getAccessToken: function(){
+        try {
+            if(!spotifyOAuth.accessToken) {
+                spotifyOAuth.accessToken = fs.readFileSync('accessToken', 'utf8');
+            }
+            return spotifyOAuth.accessToken;
+        } catch (e){
+            console.log('no accessToken found');
+            oAuth.refresh();
+        }
+        return false;
+    }
+};
 
 function handleRequest(request, response){
     data = '';
@@ -91,41 +131,4 @@ function writeFile(name, content){
     }
 }
 
-module.exports = {
-    authenticate: function(){
-        if(!config.localEnvironment){
-            logger.log('oAuth must be carried out locally. Please copy accessToken and refreshToken onto your server afterwards.');
-            process.exit(1);
-            return;
-        }
-        server.listen(PORT, function(){
-            var query = querystring.stringify({
-                client_id: config.clientId,
-                response_type: 'code',
-                scope: SCOPES,
-                redirect_uri: REDIRECT_URI
-            });
-            console.log('Please log in first: https://accounts.spotify.com/authorize?'+query);
-        });
-    },
-    refresh: function(){
-        try {
-            console.log('refreshing token...');
-            var refreshToken = fs.readFileSync('refreshToken', 'utf8');
-            getToken(undefined, refreshToken);
-        } catch (e){
-            console.log('no refreshToken found');
-            oAuth.authenticate();
-        }
-    },
-    getAccessToken: function(){
-        try {
-            var accessToken = fs.readFileSync('accessToken', 'utf8');
-            return accessToken;
-        } catch (e){
-            console.log('no accessToken found');
-            oAuth.refresh();
-        }
-        return false;
-    }
-};
+module.exports = spotifyOAuth;
