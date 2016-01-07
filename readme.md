@@ -35,3 +35,11 @@ You may want to run this on a server via cronjob every X minutes or so (dependin
 To update run `git pull` in your installation and you will get the latest changes. 
 
 Please note: Upgrading a Patch release (like from 2.2.0 to 2.2.1) will work with your existing config-file, upgrading a Major or Minor release might make it neccessary to upgrade your configuration. Please read the release notes and refer to the `config.example.json` file.
+
+## Contributing
+
+If you successfully use this script for a radio station that is not listed yet in `station-examples.md`, please add that config to the examples. It might help others.
+
+If you try this script on a new radio station and something doesn't work, open an issue with a description of the problem & your radio station config (Don't forget to remove your clientId & clientSecret!). Maybe we can get it to work.
+
+Feel free to fork the project. If you want to implement a new feature, open a new issue so we can figure out how this fits into the existing structure. I'm looking forward to pull requests :)
