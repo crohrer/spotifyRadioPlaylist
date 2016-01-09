@@ -9,7 +9,7 @@ var spotifyPlaylist = require('./spotifyPlaylist');
 start();
 
 function start(){
-    spotifyPlaylist.getTracks(0);
+    spotifyPlaylist.getLists(0);
 }
 
 module.exports = {

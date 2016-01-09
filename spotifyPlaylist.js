@@ -9,6 +9,7 @@ var spotifyHelper = require('./spotifyHelper');
 var spotifyOAuth = require('./spotifyOAuth');
 var logger = require('./logger');
 var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+var playlistIdFileName = 'playlistId';
 var spotifyPlaylist = {
     getLists: getLists,
     lists: [], // holds all list objects
@@ -35,7 +36,7 @@ function getTracks(offset){
 
     playlistRequest = https.request({
         hostname: 'api.spotify.com',
-        path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?fields=next,items.track.uri&limit='+LIMIT+'&offset='+offset,
+        path: '/v1/users/'+config.userId+'/playlists/'+spotifyPlaylist.currentPlaylist.id+'/tracks?fields=next,items.track.uri&limit='+LIMIT+'&offset='+offset,
         method: 'GET',
         headers: {
             'Authorization': 'Bearer '+ accessToken,
@@ -104,7 +105,7 @@ function addTracks(results, lastCall){
 
     addRequest = https.request({
         hostname: 'api.spotify.com',
-        path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?position=0&uris='+uris,
+        path: '/v1/users/'+config.userId+'/playlists/'+spotifyPlaylist.currentPlaylist.id+'/tracks?position=0&uris='+uris,
         method: 'POST',
         headers: {
             'Authorization': 'Bearer '+ accessToken,
@@ -143,7 +144,7 @@ function addTracks(results, lastCall){
 function getLists(offset){
     offset = offset || 0;
     var LIMIT = 50; // can be between 1 - 50, default 20
-    console.log('getting next '+LIMIT+' playlists...');
+    console.log('getting next '+LIMIT+' playlists with offset '+offset);
     var accessToken = spotifyOAuth.getAccessToken();
     var playlistRequest;
 
@@ -219,7 +220,6 @@ function getCurrentPlaylist(id){
 }
 
 function getRelatedLists(){
-    spotifyPlaylist.relatedLists.push(spotifyPlaylist.currentPlaylist);
     spotifyPlaylist.lists.forEach(function(list){
         if(cleanName(list.name) === cleanName(spotifyPlaylist.currentPlaylist.name)){
             spotifyPlaylist.relatedLists.push(list);
@@ -242,37 +242,162 @@ function determineCorrectPlaylist(){
         savedListIsRelated = false;
 
     try {
-        savedPlaylistId = fs.readFileSync('playlistId', 'utf8');
+        savedPlaylistId = fs.readFileSync(playlistIdFileName, 'utf8');
         spotifyPlaylist.relatedLists.forEach(function(list){
             if(list.id === savedPlaylistId){
                 savedListIsRelated = true;
+                spotifyPlaylist.currentPlaylist = list;
             }
         });
-        if(!savedListIsRelated){
-            throw 'Saved playlistId is not related to playlistId from config';
+        if (!savedListIsRelated) {
+            var errorMessage = 'Saved playlistId is not related to playlistId from config';
+            logger.log(errorMessage);
+            throw errorMessage;
         }
     } catch (e){
-        logger.log(e.message);
 
     }
-
-    console.log(spotifyPlaylist.currentPlaylist);
 }
 
 function checkCurrentListSize(){
-    if(spotifyPlaylist.currentPlaylist.tracks.total >= PLAYLIST_TRACK_LIMIT){
+    var currentPlaylist = spotifyPlaylist.currentPlaylist,
+        currentCleanName = cleanName(currentPlaylist.name),
+        getTracks = function(){
+            spotifyPlaylist.getTracks(0);
+        };
 
+    if(currentPlaylist.tracks.total >= PLAYLIST_TRACK_LIMIT){
+        console.log('current list is too big (more than ' + PLAYLIST_TRACK_LIMIT + ' tracks)');
+        updateList(currentPlaylist.id, currentCleanName + ' (archived '+ spotifyPlaylist.relatedLists.length +')');
+        createList(currentCleanName, getTracks);
+    } else {
+        getTracks();
     }
 }
 
+/**
+ *
+ * @param {string} id - Playlist id
+ * @param {string} name - new playlist name
+ */
 function updateList(id, name){
+    logger.log('Renaming old list to: '+name);
+    var accessToken = spotifyOAuth.getAccessToken();
+    var updateRequest;
 
+    if(accessToken === false || accessToken === ''){
+        return;
+    }
+
+    var requestData = JSON.stringify({
+        "name": name
+    });
+
+    updateRequest = https.request({
+        hostname: 'api.spotify.com',
+        path: '/v1/users/'+config.userId+'/playlists/'+id,
+        method: 'PUT',
+        headers: {
+            'Authorization': 'Bearer '+ accessToken,
+            'Content-Type': 'application/json',
+            'Content-Length': requestData.length
+        }
+    }, function(res){
+        if(res.statusCode !== 200) {
+            if (spotifyHelper.handleRateLimit(res, function(){
+                    updateList(id, name);
+                })){ return; }
+
+            if(res.statusCode === 401){
+                spotifyOAuth.refresh();
+            } else {
+                console.log(updateRequest);
+                logger.log("Error renaming playlist. Status "+res.statusCode);
+                process.exit(1);
+            }
+
+            return;
+        }
+    });
+
+    updateRequest.write(requestData);
+    updateRequest.end();
 }
 
-function createList(name){
+/**
+ *
+ * @param {string} name
+ * @param {function} callback
+ */
+function createList(name, callback){
+    var accessToken = spotifyOAuth.getAccessToken();
+    var createRequest;
 
+    if(accessToken === false || accessToken === ''){
+        return;
+    }
+
+    var requestData = JSON.stringify({
+        "name": name
+    });
+
+    createRequest = https.request({
+        hostname: 'api.spotify.com',
+        path: '/v1/users/'+config.userId+'/playlists/',
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer '+ accessToken,
+            'Content-Type': 'application/json',
+            'Content-Length': requestData.length
+        }
+    }, function(res){
+        var data = '';
+
+        if (res.statusCode === 200 || res.statusCode === 201) {
+            logger.log('Created new list: '+name);
+        } else {
+            if (spotifyHelper.handleRateLimit(res, function(){
+                    createList(name, callback);
+                })) {
+                return;
+            }
+
+            if (res.statusCode === 401) {
+                spotifyOAuth.refresh();
+            } else {
+                logger.log("Error creating playlist. Status " + res.statusCode);
+                process.exit(1);
+            }
+
+            return;
+        }
+
+        res.on('data', function(chunk){
+            data += chunk;
+        });
+        res.on('end', function(){
+            setNewCurrentList(JSON.parse(data));
+            callback();
+        });
+    });
+
+    createRequest.write(requestData);
+    createRequest.end();
 }
 
-getLists();
+/**
+ * @param {object} listObject
+ */
+function setNewCurrentList(listObject){
+    spotifyPlaylist.currentPlaylist = listObject;
+    saveCurrentPlaylistId(listObject.id);
+}
+
+/**
+ * @param {string} id
+ */
+function saveCurrentPlaylistId(id){
+    fs.writeFileSync(playlistIdFileName, id);
+}
 
 module.exports = spotifyPlaylist;

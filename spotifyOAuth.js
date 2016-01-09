@@ -33,10 +33,13 @@ var spotifyOAuth = {
         try {
             console.log('refreshing token...');
             var refreshToken = fs.readFileSync('refreshToken', 'utf8');
+            if(refreshToken === ''){
+                throw 'empty refreshToken';
+            }
             getToken(undefined, refreshToken);
         } catch (e){
             console.log('no refreshToken found');
-            oAuth.authenticate();
+            spotifyOAuth.authenticate();
         }
     },
     getAccessToken: function(){
@@ -44,10 +47,13 @@ var spotifyOAuth = {
             if(!spotifyOAuth.accessToken) {
                 spotifyOAuth.accessToken = fs.readFileSync('accessToken', 'utf8');
             }
+            if(spotifyOAuth.accessToken === ''){
+                throw 'empty accessToken';
+            }
             return spotifyOAuth.accessToken;
         } catch (e){
             console.log('no accessToken found');
-            oAuth.refresh();
+            spotifyOAuth.refresh();
         }
         return false;
     }
@@ -109,6 +115,7 @@ function getToken(code, refresh){
             var responseJson = JSON.parse(body);
             writeAccessToken(responseJson.access_token);
             writeRefreshToken(responseJson.refresh_token);
+            console.log('restarting');
             require('./main').start();
         });
     });
@@ -126,6 +133,7 @@ function writeRefreshToken(token){
 
 function writeFile(name, content){
     if(content){
+        console.log('writing '+name);
         fs.writeFileSync(name, content);
         console.log(name + ' saved!');
     }
