@@ -36,7 +36,7 @@ var spotifyOAuth = {
             getToken(undefined, refreshToken);
         } catch (e){
             console.log('no refreshToken found');
-            oAuth.authenticate();
+            spotifyOAuth.authenticate();
         }
     },
     getAccessToken: function(){
@@ -47,7 +47,7 @@ var spotifyOAuth = {
             return spotifyOAuth.accessToken;
         } catch (e){
             console.log('no accessToken found');
-            oAuth.refresh();
+            spotifyOAuth.refresh();
         }
         return false;
     }
