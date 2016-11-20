@@ -47,14 +47,6 @@ This radio station needs the linear search.
     "radioTitleSelector": "span.song",
     "radioArtistSelector": "span.artist",
     "searchLinear": false,
-
-## Die Neue 107.7
-
-    "radioTrackserviceUrl": "http://dieneue1077.de/playlisten.html",
-    "radioEntrySelector": "#block-playlisten-playlisten>.content>table tr",
-    "radioTitleSelector": "td:nth-child(4)",
-    "radioArtistSelector": "td:nth-child(3)",
-    "searchLinear": false,
     
 ## SWR1
 
