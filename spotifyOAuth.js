@@ -109,6 +109,7 @@ function getToken(code, refresh){
             var responseJson = JSON.parse(body);
             writeAccessToken(responseJson.access_token);
             writeRefreshToken(responseJson.refresh_token);
+            spotifyOAuth.accessToken = responseJson.access_token;
             require('./main').start();
         });
     });
