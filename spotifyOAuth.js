@@ -42,7 +42,7 @@ var spotifyOAuth = {
     getAccessToken: function(){
         try {
             if(!spotifyOAuth.accessToken) {
-                spotifyOAuth.accessToken = fs.readFileSync('accessToken', 'utf8');
+                spotifyOAuth.accessToken = fs.readFileSync('accessToken', 'utf8').replace(/\s/g,'');
             }
             return spotifyOAuth.accessToken;
         } catch (e){
@@ -109,7 +109,7 @@ function getToken(code, refresh){
             var responseJson = JSON.parse(body);
             writeAccessToken(responseJson.access_token);
             writeRefreshToken(responseJson.refresh_token);
-            spotifyOAuth.accessToken = responseJson.access_token;
+            spotifyOAuth.accessToken = responseJson.access_token.replace(/\s/g,'');
             require('./main').start();
         });
     });
