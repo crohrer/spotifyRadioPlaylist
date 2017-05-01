@@ -54,7 +54,7 @@ var spotifyOAuth = {
 };
 
 function handleRequest(request, response){
-    data = '';
+    var data = '';
     request.on('data', function (chunk) {
         data += chunk;
     });

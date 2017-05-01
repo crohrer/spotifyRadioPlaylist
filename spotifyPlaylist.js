@@ -94,7 +94,6 @@ function getTracks(offset){
  */
 function addTracks(results){
     var accessToken = spotifyOAuth.getAccessToken(),
-        addRequest,
         LIMIT = 40; // limit how many tracks will be added in one request
 
     if(accessToken === false){
@@ -109,42 +108,41 @@ function addTracks(results){
     var requests = results
         // we can only add max 40 tracks at once. So we split all results in chunks of 40 tracks
         .map((item, i) => (i % LIMIT === 0) ? results.slice(i, i + LIMIT) : null)
-        .filter(item => item)
-        // join all 40 track ids for the query string
-        .map(group => group.join())
-        .map(uris => makeAddRequest(uris));
+        .filter(item => item && item.length)
+        .map((items, i) => makeAddRequest(items, i * 100));
 
     return Promise.all(requests);
 
-    function makeAddRequest(uris){
+    function makeAddRequest(items, timeout){
         return new Promise(resolve => {
-            addRequest = https.request({
-                hostname: 'api.spotify.com',
-                path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?position=0&uris='+uris,
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer '+ accessToken,
-                    'Accept': 'application/json'
-                }
-            }, function(res){
-                if(res.statusCode === 201){
-                    logger.log('Success! Added '+ results.length + ' tracks.');
-                    resolve();
-                    return;
-                } else {
-                    spotifyHelper.checkForRateLimit(res, 'adding to playlist', () => resolve(spotifyPlaylist.addTracks(results)))
-                        .then(() => {
-                            if(res.statusCode === 401){
-                                spotifyOAuth.refresh();
-                            } else {
-                                logger.log("Error adding to playlist. Status "+res.statusCode);
-                                process.exit(1);
-                            }
-                        });
-                }
-            });
-
-            addRequest.end();
+            setTimeout(() => {
+                var addRequest = https.request({
+                    hostname: 'api.spotify.com',
+                    path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?position=0&uris='+items.join(), // join all 40 track ids for the query string
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer '+ accessToken,
+                        'Accept': 'application/json'
+                    }
+                }, function(res){
+                    if(res.statusCode === 201){
+                        logger.log('Success! Added '+ items.length + ' tracks.');
+                        resolve();
+                        return;
+                    } else {
+                        spotifyHelper.checkForRateLimit(res, 'adding to playlist', () => resolve(spotifyPlaylist.addTracks(results)))
+                            .then(() => {
+                                if(res.statusCode === 401){
+                                    spotifyOAuth.refresh();
+                                } else {
+                                    logger.log("Error adding to playlist. Status "+res.statusCode);
+                                    process.exit(1);
+                                }
+                            });
+                    }
+                });
+                addRequest.end();
+            }, timeout);
         });
     }
 }

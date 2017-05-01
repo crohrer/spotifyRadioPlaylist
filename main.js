@@ -13,7 +13,8 @@ start();
 function start(){
     spotifyPlaylist.getAllTracks()
         .then(radioCrawler.getTracks)
-        .then(radioTracks => spotifySearch.searchTracks(radioTracks))
+        .then(radioTracks => radioCrawler.cleanTracks(radioTracks))
+        .then(cleanedTracks => spotifySearch.searchTracks(cleanedTracks))
         .then(newTracks => spotifyPlaylist.addTracks(newTracks))
         .then(process.exit);
 }
