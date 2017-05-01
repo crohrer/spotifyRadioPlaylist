@@ -41,7 +41,7 @@ function sendSearchRequest(track, timeOut){
     function makeRequest(resolve){
         var spotifySearchReq = https.request({
             hostname: "api.spotify.com",
-            path: "/v1/search?type=track&q=" + encodeURIComponent(track.artist+' - '+track.title)
+            path: "/v1/search?type=track&q=artist:"+encodeURIComponent(track.artist+' ')+'track:'+encodeURIComponent(track.title)
         }, function(res){
             spotifyHelper.checkForRateLimit(res, 'searching track', () => sendSearchRequest(track))
                 .then(() => {
