@@ -1,8 +1,9 @@
 /**
  * Created by chris on 06.01.16.
  */
-
+"use strict";
 var logger = require('./logger');
+var Promise = require('bluebird');
 
 /**
  * handleRateLimit
@@ -21,6 +22,29 @@ function handleRateLimit(res, description, callback){
     }
 }
 
+/**
+ * checks if api limit is reached and tries API call again as soon as possible
+ * @param res
+ * @param description
+ * @param callback
+ * @returns {Promise}
+ */
+function checkForRateLimit(res, description, callback){
+    return new Promise(resolve => {
+        if(res.statusCode === 429) {
+            logger.log('limit exceeded for '+description+'. Trying again after '+res.headers['retry-after']+'.5s.');
+            let timeout = new Promise(resolveTimeout => {
+                setTimeout(() => resolveTimeout(), res.headers['retry-after'] * 1000 + 500);
+            });
+
+            resolve(timeout.then(callback))
+        } else {
+            resolve();
+        }
+    });
+}
+
 module.exports = {
-    handleRateLimit: handleRateLimit
+    handleRateLimit: handleRateLimit,
+    checkForRateLimit: checkForRateLimit
 };

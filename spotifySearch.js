@@ -5,72 +5,80 @@
 var https = require('https');
 var logger = require('./logger');
 var spotifyHelper = require('./spotifyHelper');
-var PLAYLIST_ADD_LIMIT = 40; // limit how many tracks will be added in one request
+var Promise = require('bluebird');
 
 /**
  * searchTracks
  * @param {Array} tracks
+ * @returns {Promise}
  */
 function searchTracks(tracks){
-    var responseCounter = 0,
-        results = [];
+    var searchRequests = [];
 
     tracks.forEach(function(track, i){
-        setTimeout(function(){
-            sendSearchRequest(track);
-        }, i * 100); // timeout so we don't run into limits that fast
+        searchRequests.push(sendSearchRequest(track, i * 100)); // timeout so we don't run into limits that fast
+    });
+    return Promise.all(searchRequests).then(results => results.filter(result => typeof result === 'string'));
+}
+
+/**
+ * sendSearchRequest
+ * @param {object} track
+ * @param {string} track.artist in UPPERCASE
+ * @param {string} track.title in UPPERCASE,
+ * @param {int} [timeOut] waits for this time (ms) so we don't run into limits that fast
+ * @returns {Promise}
+ */
+function sendSearchRequest(track, timeOut){
+    var time = timeOut || 0;
+    return new Promise((resolve) => {
+        setTimeout(() => makeRequest(resolve), time);
     });
 
     /**
-     * sendSearchRequest
-     * @param {object} track
-     * @param {string} track.artist in UPPERCASE
-     * @param {string} track.title in UPPERCASE
+     * @param {function} resolve Callback to resolve promise
      */
-    function sendSearchRequest(track){
+    function makeRequest(resolve){
         var spotifySearchReq = https.request({
             hostname: "api.spotify.com",
             path: "/v1/search?type=track&q=" + encodeURIComponent(track.artist+' - '+track.title)
         }, function(res){
-            if (spotifyHelper.handleRateLimit(res, 'searching track', function(){
-                    sendSearchRequest(track);
-                })) { return; }
-
-            var jsonResponse = '';
-            res.on('data', function(chunk){
-                jsonResponse += chunk;
-            });
-            res.on('end', function(){
-                var spotifyPlaylist = require('./spotifyPlaylist'),
-                    result = JSON.parse(jsonResponse),
-                    isLastSearchRequest;
-
-                if(result.tracks && result.tracks.items){
-                    result.tracks.items.some(function(item){ // iterate all items and break on success (return true)
-                        var titleMatches = item.name.toUpperCase() == track.title,
-                            artistMatches = item.artists.some(function(artist){
-                                return (track.artist.indexOf(artist.name.toUpperCase()) > -1);
-                            });
-
-                        if(!artistMatches || !titleMatches){
-                            return false;
-                        }
-
-                        if(spotifyPlaylist.tracks.indexOf(item.uri) === -1){ // avoid duplicates
-                            results.push(encodeURIComponent(item.uri));
-                        }
-                        return true; // stops iterating results, when we believe this is the song we were looking for
+            spotifyHelper.checkForRateLimit(res, 'searching track', () => sendSearchRequest(track))
+                .then(() => {
+                    var jsonResponse = '';
+                    res.on('data', function(chunk){
+                        jsonResponse += chunk;
                     });
-                }
+                    res.on('end', function(){
+                        var spotifyPlaylist = require('./spotifyPlaylist'),
+                            result = JSON.parse(jsonResponse);
 
-                responseCounter++;
-                isLastSearchRequest = (responseCounter === tracks.length);
+                        if(!result.tracks || !result.tracks.items) {
+                            return resolve();
+                        }
 
-                if(isLastSearchRequest || results.length === PLAYLIST_ADD_LIMIT){
-                    spotifyPlaylist.addTracks(results, isLastSearchRequest);
-                    results = [];
-                }
-            });
+                        result.tracks.items.some(function(item){ // iterate all items and break on success (return true)
+                            var titleMatches = item.name.toUpperCase() == track.title,
+                                isAlreadyInPlaylist = spotifyPlaylist.tracks.indexOf(item.uri) > -1,
+                                artistMatches = item.artists.some(function(artist){
+                                    return (track.artist.indexOf(artist.name.toUpperCase()) > -1);
+                                });
+
+                            if(!artistMatches || !titleMatches){
+                                return false;
+                            }
+
+                            if(isAlreadyInPlaylist){ // avoid duplicates
+                                resolve();
+                                return true; // stops iterating results
+                            }
+
+                            resolve(encodeURIComponent(item.uri));
+                        });
+
+                        resolve();
+                    });
+                });
         });
 
         spotifySearchReq.end();
