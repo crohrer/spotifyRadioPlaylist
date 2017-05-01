@@ -8,5 +8,6 @@
     "radioTitleSelector": "h3.titre",
     "radioArtistSelector": "h2.artiste",
     "searchLinear": false,
+    "fm4Api": false,
     "localEnvironment": true
 }
