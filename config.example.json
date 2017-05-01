@@ -3,10 +3,10 @@
     "clientSecret": "",
     "userId": "",
     "playlistId": "",
-    "radioTrackserviceUrl": "http://fm4.orf.at/trackservicepopup/main",
-    "radioEntrySelector": "td[width=300]>font>br",
-    "radioTitleSelector": "b",
-    "radioArtistSelector": "i",
-    "searchLinear": true,
+    "radioTrackserviceUrl": "http://www.novaplanet.com/radionova/cetaitquoicetitre/",
+    "radioEntrySelector": "div.cestquoicetitre_results>div.resultat>div.info-col",
+    "radioTitleSelector": "h3.titre",
+    "radioArtistSelector": "h2.artiste",
+    "searchLinear": false,
     "localEnvironment": true
 }
