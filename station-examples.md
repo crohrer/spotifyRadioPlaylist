@@ -2,7 +2,7 @@
 
 Here you can find some examples for configurations for various radio stations.
 
-All URLs and selectors valid as of 2016-01-03.
+All URLs and selectors valid as of 2017-05-05.
 
 ## BBC Radio
 
