@@ -13,16 +13,34 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
     "radioTitleSelector": "div.pll-playlist-item-title",
     "radioArtistSelector": "div.pll-playlist-item-artist > a",
     "searchLinear": false,
+    "fm4Api": false,
 
 ## ORF FM4
 
-This radio station needs the linear search.
-
-    "radioTrackserviceUrl": "http://fm4.orf.at/trackservicepopup/main",
-    "radioEntrySelector": "td[width=300]>font>br",
-    "radioTitleSelector": "b",
-    "radioArtistSelector": "i",
+    "radioTrackserviceUrl": "https://audioapi.orf.at/fm4/api/json/current/broadcasts",
+    "radioEntrySelector": "",
+    "radioTitleSelector": "",
+    "radioArtistSelector": "",
     "searchLinear": true,
+    "fm4Api": true,
+
+## ORF Ö1
+
+    "radioTrackserviceUrl": "https://audioapi.orf.at/oe1/api/json/current/broadcasts",
+    "radioEntrySelector": "",
+    "radioTitleSelector": "",
+    "radioArtistSelector": "",
+    "searchLinear": true,
+    "fm4Api": true,
+
+## RadioX
+
+    "radioTrackserviceUrl": "http://www.radiox.co.uk/playlist/",
+    "radioEntrySelector": "div.playlist_entry_info",
+    "radioTitleSelector": ".track",
+    "radioArtistSelector": ".artist",
+    "searchLinear": false,
+    "fm4Api": false,
 
 ## Radio Nova
 
@@ -31,6 +49,7 @@ This radio station needs the linear search.
     "radioTitleSelector": "h3.titre",
     "radioArtistSelector": "h2.artiste",
     "searchLinear": false,
+    "fm4Api": false,
 
 ## NDR2
 
@@ -39,6 +58,7 @@ This radio station needs the linear search.
     "radioTitleSelector": "span.title",
     "radioArtistSelector": "span.artist",
     "searchLinear": false,
+    "fm4Api": false,
 
 ## FluxFM
 
@@ -47,6 +67,7 @@ This radio station needs the linear search.
     "radioTitleSelector": "span.song",
     "radioArtistSelector": "span.artist",
     "searchLinear": false,
+    "fm4Api": false,
     
 ## SWR1
 
@@ -55,6 +76,7 @@ This radio station needs the linear search.
     "radioTitleSelector": "h3",
     "radioArtistSelector": "p",
     "searchLinear": false,
+    "fm4Api": false,
 
 ## Radio Swiss Jazz
 
@@ -63,3 +85,4 @@ This radio station needs the linear search.
     "radioTitleSelector": ".titletag",
     "radioArtistSelector": ".artist",
     "searchLinear": false,
+    "fm4Api": false,
