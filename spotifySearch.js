@@ -15,6 +15,7 @@ var Promise = require('bluebird');
 function searchTracks(tracks){
     var searchRequests = [];
 
+    console.log('Searching spotify for '+tracks.length+' tracks');
     tracks.forEach(function(track, i){
         searchRequests.push(sendSearchRequest(track, i * 100)); // timeout so we don't run into limits that fast
     });

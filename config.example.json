@@ -2,12 +2,19 @@
     "clientId": "",
     "clientSecret": "",
     "userId": "",
-    "playlistId": "",
-    "radioTrackserviceUrl": "http://www.novaplanet.com/radionova/cetaitquoicetitre/",
-    "radioEntrySelector": "div.cestquoicetitre_results>div.resultat>div.info-col",
-    "radioTitleSelector": "h3.titre",
-    "radioArtistSelector": "h2.artiste",
-    "searchLinear": false,
-    "fm4Api": false,
-    "localEnvironment": true
+    "localEnvironment": true,
+    "playlists": {
+        "radiox": {
+            "playlistId": "",
+            "radioTrackserviceUrl": "http://www.radiox.co.uk/playlist/",
+            "radioEntrySelector": "div.playlist_entry_info",
+            "radioTitleSelector": ".track",
+            "radioArtistSelector": ".artist"
+        },
+        "fm4": {
+            "playlistId": "",
+            "radioTrackserviceUrl": "https://audioapi.orf.at/fm4/api/json/current/broadcasts",
+            "fm4Api": true
+        }
+    }
 }

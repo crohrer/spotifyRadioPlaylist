@@ -16,20 +16,22 @@ var spotifyPlaylist = {
     tracks: []
 };
 
-function getAllTracks(){
-    return getTracks(0);
+function getAllTracks(playlistName){
+    console.log('getting tracks from playlist '+playlistName);
+    return getTracks(playlistName, 0);
 }
 
 /**
  * getTracks
+ * @param {String} playlistName like in config
  * @param {int} offset - 0 for first page
  * @returns {Promise}
  */
-function getTracks(offset){
+function getTracks(playlistName, offset){
     return new Promise((resolve, reject) => {
-        var LIMIT = 100;
-        console.log('getting next '+LIMIT+' tracks from playlist...');
-        var accessToken = spotifyOAuth.getAccessToken(),
+        let playlistId = config.playlists[playlistName].playlistId;
+        let LIMIT = 100;
+        let accessToken = spotifyOAuth.getAccessToken(),
             playlistRequest;
 
         if(accessToken === false || accessToken === ''){
@@ -38,23 +40,23 @@ function getTracks(offset){
 
         playlistRequest = https.request({
             hostname: 'api.spotify.com',
-            path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?fields=next,items.track.uri&limit='+LIMIT+'&offset='+offset,
+            path: '/v1/users/'+config.userId+'/playlists/'+playlistId+'/tracks?fields=next,items.track.uri&limit='+LIMIT+'&offset='+offset,
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer '+ accessToken,
                 'Accept': 'application/json'
             }
         }, function(res){
-            var data = '';
+            let data = '';
 
             if(res.statusCode !== 200) {
-                spotifyHelper.checkForRateLimit(res, 'requesting playlist tracks', () => spotifyPlaylist.getTracks(offset))
+                spotifyHelper.checkForRateLimit(res, 'requesting playlist tracks', () => spotifyPlaylist.getTracks(playlistName, offset))
                     .then(() => {
                         if(res.statusCode === 401){
                             spotifyOAuth.refresh();
                         } else {
                             var error = "Error getting tracks from playlist. Status "+res.statusCode;
-                            logger.log(error);
+                            logger.log(error, playlistName);
                             reject(error);
                             process.exit(1);
                         }
@@ -74,7 +76,7 @@ function getTracks(offset){
                 if(jsonData.next === null){
                     resolve();
                 } else if(typeof jsonData.next === 'string'){
-                    resolve(spotifyPlaylist.getTracks(offset + LIMIT));
+                    resolve(spotifyPlaylist.getTracks(playlistName, offset + LIMIT));
                 } else {
                     reject('error getting data from playlist request');
                 }
@@ -89,18 +91,19 @@ function getTracks(offset){
 
 /**
  * addTracks
- * @param results
- * @param [lastCall] use this if this is the last call to this function, so the program can be stopped afterwards.
+ * @param {String} playlistName
+ * @param {Array} results
  */
-function addTracks(results){
-    var accessToken = spotifyOAuth.getAccessToken(),
+function addTracks(playlistName, results){
+    let playlistConfig = config.playlists[playlistName];
+    let accessToken = spotifyOAuth.getAccessToken(),
         LIMIT = 40; // limit how many tracks will be added in one request
 
     if(accessToken === false){
         return;
     }
     if(results.length === 0){
-        logger.log('no new tracks to add');
+        logger.log('no new tracks to add', playlistName);
         process.exit();
         return;
     }
@@ -118,7 +121,7 @@ function addTracks(results){
             setTimeout(() => {
                 var addRequest = https.request({
                     hostname: 'api.spotify.com',
-                    path: '/v1/users/'+config.userId+'/playlists/'+config.playlistId+'/tracks?position=0&uris='+items.join(), // join all 40 track ids for the query string
+                    path: '/v1/users/'+config.userId+'/playlists/'+playlistConfig.playlistId+'/tracks?position=0&uris='+items.join(), // join all 40 track ids for the query string
                     method: 'POST',
                     headers: {
                         'Authorization': 'Bearer '+ accessToken,
@@ -126,16 +129,16 @@ function addTracks(results){
                     }
                 }, function(res){
                     if(res.statusCode === 201){
-                        logger.log('Success! Added '+ items.length + ' tracks.');
+                        logger.log('Success! Added '+ items.length + ' tracks.', playlistName);
                         resolve();
                         return;
                     } else {
-                        spotifyHelper.checkForRateLimit(res, 'adding to playlist', () => resolve(spotifyPlaylist.addTracks(results)))
+                        spotifyHelper.checkForRateLimit(res, 'adding to playlist', () => resolve(spotifyPlaylist.addTracks(playlistName, results)))
                             .then(() => {
                                 if(res.statusCode === 401){
                                     spotifyOAuth.refresh();
                                 } else {
-                                    logger.log("Error adding to playlist. Status "+res.statusCode);
+                                    logger.log("Error adding to playlist. Status "+res.statusCode, playlistName);
                                     process.exit(1);
                                 }
                             });

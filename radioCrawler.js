@@ -15,17 +15,22 @@ String.prototype.isEmpty = function() {return (!this || !this.length)};
 
 /**
  * getTracks
+ * @param {string} [playlistName]
  * @param {string} [trackserviceUrl]
  * @returns {Promise}
  */
-function getTracks(trackserviceUrl){
-    var url = trackserviceUrl || config.radioTrackserviceUrl;
-    if(config.fm4Api){
+function getTracks(playlistName, trackserviceUrl){
+    let playlistConfig = config.playlists[playlistName];
+    let url = trackserviceUrl || playlistConfig.radioTrackserviceUrl;
+    if(playlistConfig.fm4Api){
         return getFm4Broadcasts(url)
-            .then(broadcasts => broadcasts.map(broadcast => getFm4BroadcastTracks(broadcast)))
+            .then(broadcasts => {
+                console.log('getting tracks from API for '+broadcasts.length+' broadcasts');
+                return broadcasts.map(broadcast => getFm4BroadcastTracks(broadcast));
+            })
             .then(AllBroadcastsWithTracks => Promise.all(AllBroadcastsWithTracks))
             .then(broadcasts => {
-                var tracks = [];
+                let tracks = [];
                 broadcasts.forEach(broadcast => {
                     broadcast.forEach(track => tracks.push(track));
                 });
@@ -35,17 +40,17 @@ function getTracks(trackserviceUrl){
 
     return new Promise((resolve, reject) => {
         console.log('getting tracks from radio trackservice');
-        var trackserviceReq = http.request(url, function(res) {
-            var html = '';
+        let trackserviceReq = http.request(url, function(res) {
+            let html = '';
 
             if(res.statusCode === 302){
                 console.log('following redirect to ' + res.headers.location);
-                resolve(getTracks(res.headers.location));
+                resolve(getTracks(playlistName, res.headers.location));
                 return;
             }
             if(res.statusCode !== 200){
-                var error = 'Trackservice Error: Status '+res.statusCode;
-                logger.log(error);
+                let error = 'Trackservice Error: Status '+res.statusCode;
+                logger.log(error, playlistName);
                 reject(error);
                 process.exit(1);
                 return;
@@ -56,25 +61,24 @@ function getTracks(trackserviceUrl){
                 html += chunk;
             });
             res.on('end', function() {
-                var $ = cheerio.load(html),
+                let $ = cheerio.load(html),
                     tracks = [];
 
-                $(config.radioEntrySelector).each(function(i, elem){
-                    var $entry = $(this),
-                        isUnique = true,
+                $(playlistConfig.radioEntrySelector).each(function(i, elem){
+                    let $entry = $(this),
                         $title, // cheerio-object
                         $artist, // cheerio-object
                         title, // string
                         artist; // string
 
-                    if (config.searchLinear) {
-                        // Stations like ORF FM4 have strange markup and need linear search
-                        $title = $entry.nextAll(config.radioTitleSelector).first();
-                        $artist = $entry.nextAll(config.radioArtistSelector).first();
+                    if (playlistConfig.searchLinear) {
+                        // Stations like the old page of ORF FM4 have strange markup and need linear search
+                        $title = $entry.nextAll(playlistConfig.radioTitleSelector).first();
+                        $artist = $entry.nextAll(playlistConfig.radioArtistSelector).first();
                     } else {
                         // Most other station playlists feature nested markup
-                        $title = $entry.find(config.radioTitleSelector);
-                        $artist = $entry.find(config.radioArtistSelector);
+                        $title = $entry.find(playlistConfig.radioTitleSelector);
+                        $artist = $entry.find(playlistConfig.radioArtistSelector);
                     }
 
                     title = $title.text();
@@ -87,7 +91,7 @@ function getTracks(trackserviceUrl){
                 });
 
                 if(tracks.length === 0){
-                    logger.log('no tracks found on radio trackservice.');
+                    logger.log('no tracks found on radio trackservice.', playlistName);
                     return;
                     process.exit(1);
                 }
@@ -97,7 +101,7 @@ function getTracks(trackserviceUrl){
         });
 
         trackserviceReq.on('error', function(e) {
-            logger.log('problem with trackservice request: ' + e.message);
+            logger.log('problem with trackservice request: ' + e.message, playlistName);
             process.exit(1);
         });
 
@@ -117,8 +121,8 @@ function getFm4Broadcasts(broadcastsUrl){
             res.on('data', (chunk) => { rawData += chunk; });
             res.on('end', () => {
                 try {
-                    var days = JSON.parse(rawData);
-                    var allBroadcasts = [];
+                    let days = JSON.parse(rawData);
+                    let allBroadcasts = [];
                     days.map(day => day.broadcasts).map(broadcasts => {
                         broadcasts.map(broadcast => allBroadcasts.push(broadcast))
                     });

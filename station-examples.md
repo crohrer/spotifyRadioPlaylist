@@ -12,25 +12,15 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
     "radioEntrySelector": "div.pll-playlist-item-details",
     "radioTitleSelector": "div.pll-playlist-item-title",
     "radioArtistSelector": "div.pll-playlist-item-artist > a",
-    "searchLinear": false,
-    "fm4Api": false,
 
 ## ORF FM4
 
     "radioTrackserviceUrl": "https://audioapi.orf.at/fm4/api/json/current/broadcasts",
-    "radioEntrySelector": "",
-    "radioTitleSelector": "",
-    "radioArtistSelector": "",
-    "searchLinear": true,
     "fm4Api": true,
 
 ## ORF Ö1
 
     "radioTrackserviceUrl": "https://audioapi.orf.at/oe1/api/json/current/broadcasts",
-    "radioEntrySelector": "",
-    "radioTitleSelector": "",
-    "radioArtistSelector": "",
-    "searchLinear": true,
     "fm4Api": true,
 
 ## RadioX
@@ -39,7 +29,6 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
     "radioEntrySelector": "div.playlist_entry_info",
     "radioTitleSelector": ".track",
     "radioArtistSelector": ".artist",
-    "searchLinear": false,
     "fm4Api": false,
 
 ## Radio Nova
@@ -48,8 +37,6 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
     "radioEntrySelector": "div.cestquoicetitre_results>div.resultat>div.info-col",
     "radioTitleSelector": "h3.titre",
     "radioArtistSelector": "h2.artiste",
-    "searchLinear": false,
-    "fm4Api": false,
 
 ## NDR2
 
@@ -57,8 +44,6 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
     "radioEntrySelector": "div#playlist>ul>li.program>div.details>h3",
     "radioTitleSelector": "span.title",
     "radioArtistSelector": "span.artist",
-    "searchLinear": false,
-    "fm4Api": false,
 
 ## FluxFM
 
@@ -66,8 +51,6 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
     "radioEntrySelector": "table#songs>tr>td.title>div",
     "radioTitleSelector": "span.song",
     "radioArtistSelector": "span.artist",
-    "searchLinear": false,
-    "fm4Api": false,
     
 ## SWR1
 
@@ -75,8 +58,6 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
     "radioEntrySelector": ".musicItemText",
     "radioTitleSelector": "h3",
     "radioArtistSelector": "p",
-    "searchLinear": false,
-    "fm4Api": false,
 
 ## Radio Swiss Jazz
 
@@ -84,5 +65,3 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
     "radioEntrySelector": ".playlist>.item-row",
     "radioTitleSelector": ".titletag",
     "radioArtistSelector": ".artist",
-    "searchLinear": false,
-    "fm4Api": false,
