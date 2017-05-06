@@ -2,16 +2,16 @@
  * Created by chris on 06.01.16.
  */
 "use strict";
-var http = require('http');
 var https = require('https');
 var Promise = require('bluebird');
 var fs = require('fs');
 var cheerio = require('cheerio');
 var logger = require('./logger');
+var Horseman = require('node-horseman');
+var horseman = new Horseman();
 var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 
 String.prototype.trimEx = function() {return this.trim().replace(/^\s?-\s/, '').toUpperCase()}; // we compare our strings later in uppercase
-String.prototype.isEmpty = function() {return (!this || !this.length)};
 
 /**
  * getTracks
@@ -22,11 +22,11 @@ String.prototype.isEmpty = function() {return (!this || !this.length)};
 function getTracks(playlistName, trackserviceUrl){
     let playlistConfig = config.playlists[playlistName];
     let url = trackserviceUrl || playlistConfig.radioTrackserviceUrl;
-    if(playlistConfig.fm4Api){
-        return getFm4Broadcasts(url)
+    if(playlistConfig.orfApi){
+        return getOrfBroadcasts(url)
             .then(broadcasts => {
                 console.log('getting tracks from API for '+broadcasts.length+' broadcasts');
-                return broadcasts.map(broadcast => getFm4BroadcastTracks(broadcast));
+                return broadcasts.map(broadcast => getOrfBroadcastTracks(broadcast));
             })
             .then(AllBroadcastsWithTracks => Promise.all(AllBroadcastsWithTracks))
             .then(broadcasts => {
@@ -40,28 +40,15 @@ function getTracks(playlistName, trackserviceUrl){
 
     return new Promise((resolve, reject) => {
         console.log('getting tracks from radio trackservice');
-        let trackserviceReq = http.request(url, function(res) {
-            let html = '';
-
-            if(res.statusCode === 302){
-                console.log('following redirect to ' + res.headers.location);
-                resolve(getTracks(playlistName, res.headers.location));
-                return;
-            }
-            if(res.statusCode !== 200){
-                let error = 'Trackservice Error: Status '+res.statusCode;
-                logger.log(error, playlistName);
-                reject(error);
-                process.exit(1);
-                return;
-            }
-
-            res.setEncoding('utf8');
-            res.on('data', function (chunk) {
-                html += chunk;
-            });
-            res.on('end', function() {
+        horseman
+            .userAgent('Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0')
+            .open(url)
+            .waitForSelector(playlistConfig.radioEntrySelector)
+            .html()
+            .then((html) => {
                 let $ = cheerio.load(html),
+                    searchInArtist = playlistConfig.removeFromArtistString || '',
+                    searchInTitle = playlistConfig.removeFromTitleString || '',
                     tracks = [];
 
                 $(playlistConfig.radioEntrySelector).each(function(i, elem){
@@ -81,8 +68,8 @@ function getTracks(playlistName, trackserviceUrl){
                         $artist = $entry.find(playlistConfig.radioArtistSelector);
                     }
 
-                    title = $title.text();
-                    artist = $artist.text();
+                    title = $title.text().replace(searchInTitle, '');
+                    artist = $artist.text().replace(searchInArtist, '');
 
                     tracks.push({
                         title: title,
@@ -92,24 +79,16 @@ function getTracks(playlistName, trackserviceUrl){
 
                 if(tracks.length === 0){
                     logger.log('no tracks found on radio trackservice.', playlistName);
-                    return;
-                    process.exit(1);
+                    return reject();
                 }
 
                 resolve(tracks);
-            });
-        });
-
-        trackserviceReq.on('error', function(e) {
-            logger.log('problem with trackservice request: ' + e.message, playlistName);
-            process.exit(1);
-        });
-
-        trackserviceReq.end();
+            })
+            .close();
     });
 }
 
-function getFm4Broadcasts(broadcastsUrl){
+function getOrfBroadcasts(broadcastsUrl){
     return new Promise((resolve, reject) => {
         https.get(broadcastsUrl, (res) => {
             if(res.statusCode !== 200){
@@ -137,7 +116,7 @@ function getFm4Broadcasts(broadcastsUrl){
     });
 }
 
-function getFm4BroadcastTracks(broadcast){
+function getOrfBroadcastTracks(broadcast){
     return new Promise((resolve, reject) => {
         https.get(broadcast.href, (res) => {
             if(res.statusCode !== 200){
@@ -149,8 +128,8 @@ function getFm4BroadcastTracks(broadcast){
             res.on('data', (chunk) => { rawData += chunk; });
             res.on('end', () => {
                 try {
-                    var data = JSON.parse(rawData);
-                    var tracks = data.items
+                    let data = JSON.parse(rawData);
+                    let tracks = data.items
                         .map(broadcastItem => {
                             return {
                                 title: broadcastItem.title,
@@ -180,9 +159,9 @@ function cleanTracks(tracks){
         tracks
             .filter(track => track.artist && track.title)
             .forEach((track) => {
-                var isUnique = true;
-                var artist = track.artist.trimEx();
-                var title = track.title.trimEx();
+                let isUnique = true;
+                let artist = track.artist.trimEx();
+                let title = track.title.trimEx();
 
                 // check for duplicates
                 cleanedTracks.forEach(function(cleanTrack){

@@ -14,7 +14,16 @@
         "fm4": {
             "playlistId": "",
             "radioTrackserviceUrl": "https://audioapi.orf.at/fm4/api/json/current/broadcasts",
-            "fm4Api": true
+            "orfApi": true
+        },
+        "fip": {
+            "playlistId": "",
+            "radioTrackserviceUrl": "http://www.fipradio.fr/archives-antenne",
+            "radioEntrySelector": ".list-song > .son",
+            "radioTitleSelector": ".titre_title",
+            "removeFromTitleString": "",
+            "radioArtistSelector": ".titre_artiste",
+            "removeFromArtistString": "par :"
         }
     }
 }

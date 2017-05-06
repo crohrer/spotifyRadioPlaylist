@@ -34,6 +34,28 @@ You may want to run this on a server via cronjob every X minutes or so (dependin
 4. Run `npm install`
 5. Configure your cronjob to run `node main.js <stationIdentifier>` every X minutes (don't forget to change to the correct directory first! - this can be done with a bash script)
 
+## Adding new Radio Stations to the config
+
+Currently there are two different types of crawling available:
+
+1. Special API crawling for ORF APIs like `https://audioapi.orf.at/fm4/api/json/current/broadcasts`.
+2. Classic crawling for HTML tracklistings. This covers most radio stations.
+
+For the first type (ORF API) only three Parameters are required: 
+* `playlistId`: spotify ID for the playlist to add new tracks to
+* `orfApi: true`: flag to activate this mode
+* `radioTrackserviceUrl`: API URL
+
+For the second type there are also some optional parameters available. This is the default crawling mode.
+* `playlistId`: spotify ID for the playlist to add new tracks to
+* `radioTrackserviceUrl`: URL to the page with track listings
+* `radioEntrySelector`: jQuery style Selector for the encapsulating element that contains the info for exactly one track (i.e. `.list-item`). This is not used, when using the option `searchLinear`. 
+* `searchLinear: true`: optional & experimental. Set this to true, when tracks are not encapsulated individually, but are listed one after another. The website this mode was implemented for doesn't exist anymore, so this is not well tested at the moment.
+* `radioTitleSelector`: jQuery style Selector for the title text.
+* `removeFromTitleString`: optional. String to remove from title (i.e. `Title:`). This is necessary when title info and other texts are not separated correctly by the website owner.
+* `radioArtistSelector`: jQuery style Selector for the artist text.
+* `removeFromArtistString`: optional. String to remove from Artist (i.e. `Artist:`). This is necessary when artist info and other texts are not separated correctly by the website owner.
+
 ## Updates
 
 To update run `git pull` in your installation and you will get the latest changes. 

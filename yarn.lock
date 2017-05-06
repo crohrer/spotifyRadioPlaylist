@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-bluebird@^3.5.0:
+bluebird@^3.0.1, bluebird@^3.5.0:
   version "3.5.0"
   resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.5.0.tgz#791420d7f551eea2897453a8a77653f96606d67c"
 
@@ -19,6 +19,14 @@ cheerio@^0.19.0:
     entities "~1.1.1"
     htmlparser2 "~3.8.1"
     lodash "^3.2.0"
+
+clone@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/clone/-/clone-1.0.2.tgz#260b7a99ebb1edfe247538175f783243cb19d149"
+
+cookies.txt@^0.1.1:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/cookies.txt/-/cookies.txt-0.1.2.tgz#a8b249d9ee9699305362d604b7e0ac0f20e7519e"
 
 core-util-is@~1.0.0:
   version "1.0.2"
@@ -37,6 +45,22 @@ css-what@1.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/css-what/-/css-what-1.0.0.tgz#d7cc2df45180666f99d2b14462639469e00f736c"
 
+data-uri-to-buffer@0.0.4:
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/data-uri-to-buffer/-/data-uri-to-buffer-0.0.4.tgz#46e13ab9da8e309745c8d01ce547213ebdb2fe3f"
+
+debug@^2.1.1, debug@^2.2.0:
+  version "2.6.6"
+  resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.6.tgz#a9fa6fbe9ca43cf1e79f73b75c0189cbb7d6db5a"
+  dependencies:
+    ms "0.7.3"
+
+defaults@~1.0.0:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/defaults/-/defaults-1.0.3.tgz#c656051e9817d9ff08ed881477f3fe4019f3ef7d"
+  dependencies:
+    clone "^1.0.2"
+
 dom-serializer@0, dom-serializer@~0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/dom-serializer/-/dom-serializer-0.1.0.tgz#073c697546ce0780ce23be4a28e293e40bc30c82"
@@ -44,11 +68,7 @@ dom-serializer@0, dom-serializer@~0.1.0:
     domelementtype "~1.1.1"
     entities "~1.1.1"
 
-domelementtype@1:
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/domelementtype/-/domelementtype-1.3.0.tgz#b17aed82e8ab59e52dd9c19b1756e0fc187204c2"
-
-domelementtype@~1.1.1:
+domelementtype@1, domelementtype@~1.1.1:
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/domelementtype/-/domelementtype-1.1.3.tgz#bd28773e2642881aec51544924299c5cd822185b"
 
@@ -100,6 +120,28 @@ isarray@0.0.1:
 lodash@^3.2.0:
   version "3.10.1"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-3.10.1.tgz#5bf45e8e49ba4189e17d482789dfd15bd140b7b6"
+
+ms@0.7.3:
+  version "0.7.3"
+  resolved "https://registry.yarnpkg.com/ms/-/ms-0.7.3.tgz#708155a5e44e33f5fd0fc53e81d0d40a91be1fff"
+
+node-horseman@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/node-horseman/-/node-horseman-3.3.0.tgz#86100369437de794f669e0f52fd94cf945981bb2"
+  dependencies:
+    bluebird "^3.0.1"
+    clone "^1.0.2"
+    cookies.txt "^0.1.1"
+    data-uri-to-buffer "0.0.4"
+    debug "^2.1.1"
+    defaults "~1.0.0"
+    node-phantom-simple "^2.2.4"
+
+node-phantom-simple@^2.2.4:
+  version "2.2.4"
+  resolved "https://registry.yarnpkg.com/node-phantom-simple/-/node-phantom-simple-2.2.4.tgz#4fc4effbb02f241fb5082bd4fbab398e4aecb64d"
+  dependencies:
+    debug "^2.2.0"
 
 nth-check@~1.0.0:
   version "1.0.1"
