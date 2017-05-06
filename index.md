@@ -9,6 +9,10 @@ More on the background of this project in my [blog post](http://blog.chrisrohrer
 Currently running hourly via cronjob on [this playlist](https://play.spotify.com/user/radiolistenerbot/playlist/2G76EIk09AuL58sHI9my9V)
 <iframe src="https://embed.spotify.com/?uri=spotify%3Auser%3Aradiolistenerbot%3Aplaylist%3A2G76EIk09AuL58sHI9my9V" width="300" height="380" frameborder="0" allowtransparency="true"></iframe>
 
+Actually you find a growing list of playlists from multiple radio stations being crawled by the spotify account RadiolistenerBot 
+<iframe src="https://open.spotify.com/follow/1/?uri=spotify:user:radiolistenerbot&size=detail&theme=light" width="300" height="56" scrolling="no" frameborder="0" style="border:none; overflow:hidden;" allowtransparency="true"></iframe>
+All those playlists are public. My bot happily accepts new followers on his profile and on his playlists!
+
 ## Usage
 
 Before running it on the server you need to authenticate via oAuth (as the user who owns the specified playlist) locally.
@@ -16,7 +20,7 @@ Before running it on the server you need to authenticate via oAuth (as the user 
 1. Clone this repo into a local directory
 2. Copy `config.example.json` to `config.json` and insert your own credentials & playlistIds for your desired radio stations.
 You can obtain a clientId & clientSecret by [registering a new application](https://developer.spotify.com/my-applications/#!/applications).  
-There are some pre-defined and tested radio stations, they can be found in `station-examples.md`. You can define your own schemes, all you need is the URL of the playlist page of the station and three jQuery selectors: one for the playlist entry element, one for the title and one for the artist. Some radio stations (like FM4) have special markup that requires linear instead of nested search; this behaviour can be set with the `searchLinear` flag.
+There are some pre-defined and tested radio stations, they can be found in `station-examples.md`. You can define your own schemes, all you need is the URL of the playlist page of the station and three jQuery selectors: one for the playlist entry element, one for the title and one for the artist. Some radio stations (like the old FM4 page) have special markup that requires linear instead of nested search; this behaviour can be set with the `searchLinear` flag.
 3. Run `npm install`
 4. Run `npm start <stationIdentifier>` (stationIdentifier is the name of the playlist config inside your config file.) 
 5. Open the displayed URL in your browser & grant permission for your app to change your playlists. This will open a page on localhost which you can close. Now you find two new files: `accessToken` and `refreshToken`. They contain the secret information to authenticate the user with spotify, so handle with care!
