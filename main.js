@@ -23,7 +23,11 @@ function start(){
         .then(radioTracks => radioCrawler.cleanTracks(radioTracks))
         .then(cleanedTracks => spotifySearch.searchTracks(cleanedTracks))
         .then(newTracks => spotifyPlaylist.addTracks(playlistName, newTracks))
-        .then(process.exit);
+        .then(process.exit)
+        .catch(() => {
+            logger.log('exited due to error.', playlistName);
+            process.exit();
+        });
 }
 
 module.exports = {

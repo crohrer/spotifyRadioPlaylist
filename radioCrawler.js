@@ -84,7 +84,11 @@ function getTracks(playlistName, trackserviceUrl){
 
                 resolve(tracks);
             })
-            .close();
+            .close()
+            .catch(() => {
+                logger.log('error requesting trackservice.', playlistName);
+                reject();
+            });
     });
 }
 
