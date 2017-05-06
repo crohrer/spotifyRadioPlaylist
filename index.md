@@ -9,8 +9,9 @@ More on the background of this project in my [blog post](http://blog.chrisrohrer
 Currently running hourly via cronjob on [this playlist](https://play.spotify.com/user/radiolistenerbot/playlist/2G76EIk09AuL58sHI9my9V)
 <iframe src="https://embed.spotify.com/?uri=spotify%3Auser%3Aradiolistenerbot%3Aplaylist%3A2G76EIk09AuL58sHI9my9V" width="300" height="380" frameborder="0" allowtransparency="true"></iframe>
 
-Actually you find a growing list of playlists from multiple radio stations being crawled by the spotify account RadiolistenerBot 
+Actually you find a growing list of playlists from multiple radio stations being crawled by the spotify account [RadiolistenerBot](https://open.spotify.com/user/radiolistenerbot) 
 <iframe src="https://open.spotify.com/follow/1/?uri=spotify:user:radiolistenerbot&size=detail&theme=light" width="300" height="56" scrolling="no" frameborder="0" style="border:none; overflow:hidden;" allowtransparency="true"></iframe>
+
 All those playlists are public. My bot happily accepts new followers on his profile and on his playlists!
 
 ## Usage
