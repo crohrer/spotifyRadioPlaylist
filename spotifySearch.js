@@ -59,7 +59,7 @@ function sendSearchRequest(track, timeOut){
                         }
 
                         result.tracks.items.some(function(item){ // iterate all items and break on success (return true)
-                            var titleMatches = item.name.toUpperCase() == track.title,
+                            var titleMatches = cleanString(item.name.toUpperCase()) === cleanString(track.title),
                                 isAlreadyInPlaylist = spotifyPlaylist.tracks.indexOf(item.uri) > -1,
                                 artistMatches = item.artists.some(function(artist){
                                     return (track.artist.indexOf(artist.name.toUpperCase()) > -1);
@@ -84,6 +84,10 @@ function sendSearchRequest(track, timeOut){
 
         spotifySearchReq.end();
     }
+}
+
+function cleanString(string){
+    return string.replace(/[\-\(\)\.]/g, '').replace('  ', ' ');
 }
 
 module.exports = {
