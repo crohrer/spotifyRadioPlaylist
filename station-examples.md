@@ -48,9 +48,9 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
 ## FluxFM
 
     "radioTrackserviceUrl": "http://www.fluxfm.de/fluxfm-playlist/",
-    "radioEntrySelector": "table#songs>tr>td.title>div",
-    "radioTitleSelector": "span.song",
-    "radioArtistSelector": "span.artist",
+    "radioEntrySelector": "#songs td.title",
+    "radioTitleSelector": ".song",
+    "radioArtistSelector": ".artist"
     
 ## SWR1
 
