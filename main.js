@@ -21,11 +21,15 @@ function start(){
     spotifyPlaylist.getAllTracks(playlistName)
         .then(() => radioCrawler.getTracks(playlistName))
         .then(radioTracks => radioCrawler.cleanTracks(radioTracks))
-        .then(cleanedTracks => spotifySearch.searchTracks(cleanedTracks))
+        .then(cleanedTracks => spotifySearch.searchTracks(cleanedTracks, playlistName))
         .then(newTracks => spotifyPlaylist.addTracks(playlistName, newTracks))
         .then(process.exit)
-        .catch(() => {
-            logger.log('exited due to error.', playlistName);
+        .catch((error) => {
+            let message = 'Unknown Error';
+            if(typeof error === 'string'){
+                message = error;
+            }
+            logger.log('exited due to error: ' + message, playlistName);
             process.exit();
         });
 }
