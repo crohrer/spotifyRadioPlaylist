@@ -41,90 +41,106 @@ function searchTracks(tracks, playlistName){
  */
 function sendSearchRequest(track, timeOut, playlistName){
     var time = timeOut || 0;
+    let tryCounter = 0; // count requests for one track to prevent infinite loop (in case of error the request might be tried again)
     return new Promise((resolve, reject) => {
-        setTimeout(() => makeRequest(resolve, reject), time);
+        setTimeout(() => {
+            resolve(makeRequest().catch(error => reject(error)));
+        }, time);
     });
 
     /**
-     * @param {function} resolve Callback to resolve promise
-     * @param {function} reject
+     * @return {Promise}
      */
-    function makeRequest(resolve, reject){
-        let accessToken = spotifyOAuth.getAccessToken();
-
-        if(accessToken === false || accessToken === ''){
-            return reject('no access token found');
-        }
-
-        var spotifySearchReq = https.request({
-            hostname: "api.spotify.com",
-            path: "/v1/search?type=track&q=artist:"+encodeURIComponent(track.artist+' ')+'track:'+encodeURIComponent(track.title),
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer '+ accessToken,
-                'Accept': 'application/json'
+    function makeRequest(){
+        return new Promise((resolve, reject) => {
+            if(tryCounter > 3){
+                return reject('Error: SearchRequest for "'+ track.artist + ' - ' + track.title + '" was tried more than 3 times.');
             }
-        }, function(res){
-            spotifyHelper.checkForRateLimit(res, 'searching track', () => sendSearchRequest(track, 0, playlistName))
-                .then((rateLimitPromise) => {
-                    if(rateLimitPromise){
-                        return rateLimitPromise;
-                    }
-                    var jsonResponse = '';
-                    res.on('data', function(chunk){
-                        jsonResponse += chunk;
-                    });
-                    res.on('end', function(){
-                        var spotifyPlaylist = require('./spotifyPlaylist'),
-                            result = JSON.parse(jsonResponse);
+            tryCounter += 1;
+            let accessToken = spotifyOAuth.getAccessToken();
 
-                        if(result.error && result.error.status === 429){
-                            return resolve(); // rateLimit is exceeded - this is already handled above by spotifyHelper
+            if(accessToken === false || accessToken === ''){
+                return reject('no access token found');
+            }
+
+            var spotifySearchReq = https.request({
+                hostname: "api.spotify.com",
+                path: "/v1/search?type=track&q=artist:"+encodeURIComponent(track.artist+' ')+'track:'+encodeURIComponent(track.title),
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer '+ accessToken,
+                    'Accept': 'application/json'
+                }
+            }, function(res){
+                spotifyHelper.checkForRateLimit(res, 'searching track', () => sendSearchRequest(track, 0, playlistName))
+                    .then((rateLimitPromise) => {
+                        if(rateLimitPromise){
+                            return rateLimitPromise;
                         }
-
-                        if(result.error){
-                            let message = result.error.message || 'Unknown error while searching';
-                            if(process.stdout.isTTY){
-                                process.stdout.write('\n');
-                            }
-                            logger.log('Error searching for "'+ track.artist + ' - ' + track.title + '": ' + message, playlistName);
-                            return resolve();
-                        }
-
-                        if(!result.tracks || !result.tracks.items) {
-                            return resolve();
-                        }
-
-                        if(process.stdout.isTTY){
-                            process.stdout.write('.');
-                        }
-
-                        result.tracks.items.some(function(item){ // iterate all items and break on success (return true)
-                            var titleMatches = cleanString(item.name.toUpperCase()) === cleanString(track.title),
-                                isAlreadyInPlaylist = spotifyPlaylist.tracks.indexOf(item.uri) > -1,
-                                artistMatches = item.artists.some(function(artist){
-                                    return (track.artist.indexOf(artist.name.toUpperCase()) > -1);
-                                });
-
-                            if(!artistMatches || !titleMatches){
-                                return false;
-                            }
-
-                            if(isAlreadyInPlaylist){ // avoid duplicates
-                                resolve();
-                                return true; // stops iterating results
-                            }
-
-                            resolve(encodeURIComponent(item.uri));
-                            return true;
+                        var jsonResponse = '';
+                        res.on('data', function(chunk){
+                            jsonResponse += chunk;
                         });
+                        res.on('end', function(){
+                            var spotifyPlaylist = require('./spotifyPlaylist'),
+                                result = JSON.parse(jsonResponse);
 
-                        resolve();
+                            if(result.error){
+                                switch (result.error.status) {
+                                    case 429:
+                                        // rateLimit is exceeded - this is already handled above by spotifyHelper
+                                        return resolve();
+                                        break;
+                                    case 401:
+                                        // accessToken might be expired
+                                        return resolve(spotifyOAuth.refresh()
+                                            .then(makeRequest().catch(error => logger.log(error, playlistName))));
+                                        break;
+                                    default:
+                                        let message = result.error.message || 'Unknown error while searching';
+                                        if(process.stdout.isTTY){
+                                            process.stdout.write('\n');
+                                        }
+                                        logger.log('Error searching for "'+ track.artist + ' - ' + track.title + '": ' + message, playlistName);
+                                        return resolve();
+                                }
+                            }
+
+                            if(!result.tracks || !result.tracks.items) {
+                                return resolve();
+                            }
+
+                            if(process.stdout.isTTY){
+                                process.stdout.write('.'); // writes one dot per search Request for visualization
+                            }
+
+                            result.tracks.items.some(function(item){ // iterate all items and break on success (return true)
+                                let titleMatches = cleanString(item.name.toUpperCase()) === cleanString(track.title),
+                                    isAlreadyInPlaylist = spotifyPlaylist.tracks.indexOf(item.uri) > -1,
+                                    artistMatches = item.artists.some(function(artist){
+                                        return (track.artist.indexOf(artist.name.toUpperCase()) > -1);
+                                    });
+
+                                if(!artistMatches || !titleMatches){
+                                    return false;
+                                }
+
+                                if(isAlreadyInPlaylist){ // avoid duplicates
+                                    resolve();
+                                    return true; // stops iterating results
+                                }
+
+                                resolve(encodeURIComponent(item.uri));
+                                return true;
+                            });
+
+                            resolve();
+                        });
                     });
-                });
-        });
+            });
 
-        spotifySearchReq.end();
+            spotifySearchReq.end();
+        });
     }
 }
 

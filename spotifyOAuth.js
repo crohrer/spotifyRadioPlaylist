@@ -6,6 +6,8 @@ var http = require('http');
 var https = require('https');
 var fs = require('fs');
 var url = require('url') ;
+var Promise = require('bluebird');
+var logger = require('./logger');
 var querystring = require('querystring');
 var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 var server = http.createServer(handleRequest);
@@ -30,14 +32,16 @@ var spotifyOAuth = {
         });
     },
     refresh: function(){
-        try {
-            console.log('refreshing token...');
-            var refreshToken = fs.readFileSync('refreshToken', 'utf8');
-            getToken(undefined, refreshToken);
-        } catch (e){
-            console.log('no refreshToken found');
-            spotifyOAuth.authenticate();
-        }
+        return new Promise(resolve => {
+            try {
+                console.log('refreshing token...');
+                let refreshToken = fs.readFileSync('refreshToken', 'utf8');
+                resolve(getToken(undefined, refreshToken));
+            } catch (e){
+                logger.log('no refreshToken found');
+                spotifyOAuth.authenticate();
+            }
+        });
     },
     getAccessToken: function(){
         try {
@@ -47,7 +51,9 @@ var spotifyOAuth = {
             return spotifyOAuth.accessToken;
         } catch (e){
             console.log('no accessToken found');
-            spotifyOAuth.refresh();
+            spotifyOAuth.refresh()
+                .then(require('./main').start)
+                .catch(error => logger.log(error, 'spotifyOAuth.getAccessToken'));
         }
         return false;
     }
@@ -63,58 +69,64 @@ function handleRequest(request, response){
         response.end('You can close this Window now.');
 
         if(queryObject.code){ // this is the authorization code
-            getToken(queryObject.code);
-            server.close();
+            getToken(queryObject.code)
+                .then(server.close)
+                .catch(error => logger.log(error));
         }
     });
 }
 
 /**
  * one of the params is required!
- * @param code authCode or undefined
- * @param refresh refreshToken or undefined
+ * @param {String|undefined} code authCode or undefined
+ * @param {String|undefined} refresh refreshToken or undefined
+ * @returns {Promise}
  */
 function getToken(code, refresh){
-    var jsonData;
-    if(refresh){
-        jsonData = {
-            grant_type: "refresh_token",
-            refresh_token: refresh
-        };
-    } else {
-        jsonData = {
-            grant_type: "authorization_code",
-            code: code,
-            redirect_uri: REDIRECT_URI
-        };
-    }
-    var idAndSecret = config.clientId+':'+config.clientSecret;
-    var authString = 'Basic ' + new Buffer(idAndSecret).toString('base64');
-    var data = querystring.stringify(jsonData);
-    var tokenReq = https.request({
-        hostname: 'accounts.spotify.com',
-        path: '/api/token',
-        method: 'POST',
-        headers: {
-            'Authorization': authString,
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Content-Length': Buffer.byteLength(data)
+    return new Promise((resolve, reject) => {
+        var jsonData;
+        if(refresh){
+            jsonData = {
+                grant_type: "refresh_token",
+                refresh_token: refresh
+            };
+        } else {
+            jsonData = {
+                grant_type: "authorization_code",
+                code: code,
+                redirect_uri: REDIRECT_URI
+            };
         }
-    }, function(res){
-        var body = '';
-        res.on('data', function(chunk){
-            body += new Buffer(chunk).toString();
+        var idAndSecret = config.clientId+':'+config.clientSecret;
+        var authString = 'Basic ' + new Buffer(idAndSecret).toString('base64');
+        var data = querystring.stringify(jsonData);
+        var tokenReq = https.request({
+            hostname: 'accounts.spotify.com',
+            path: '/api/token',
+            method: 'POST',
+            headers: {
+                'Authorization': authString,
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Length': Buffer.byteLength(data)
+            }
+        }, function(res){
+            var body = '';
+            res.on('data', function(chunk){
+                body += new Buffer(chunk).toString();
+            });
+            res.on('end', function(){
+                var responseJson = JSON.parse(body);
+                writeAccessToken(responseJson.access_token);
+                writeRefreshToken(responseJson.refresh_token);
+                spotifyOAuth.accessToken = responseJson.access_token.replace(/\s/g,'');
+                resolve(spotifyOAuth.accessToken);
+            });
         });
-        res.on('end', function(){
-            var responseJson = JSON.parse(body);
-            writeAccessToken(responseJson.access_token);
-            writeRefreshToken(responseJson.refresh_token);
-            spotifyOAuth.accessToken = responseJson.access_token.replace(/\s/g,'');
-            require('./main').start();
+        tokenReq.on('error', () => {
+            reject('Error Refreshing Auth Token');
         });
+        tokenReq.end(data);
     });
-
-    tokenReq.end(data);
 }
 
 function writeAccessToken(token){
@@ -125,10 +137,15 @@ function writeRefreshToken(token){
     writeFile('refreshToken', token);
 }
 
+/**
+ * writes file in fs
+ * @param {String} name
+ * @param {String} content
+ */
 function writeFile(name, content){
     if(content){
         fs.writeFileSync(name, content);
-        console.log(name + ' saved!');
+        logger.log(name + ' saved!');
     }
 }
 
