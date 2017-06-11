@@ -4,3 +4,4 @@ accessToken
 refreshToken
 application.log
 node_modules
+cronScript.sh
