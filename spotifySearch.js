@@ -15,38 +15,44 @@ var Promise = require('bluebird');
  * @returns {Promise}
  */
 function searchTracks(tracks, playlistName){
-    var searchRequests = [];
-
+    let results = [];
     console.log('Searching spotify for '+tracks.length+' tracks');
-    tracks.forEach(function(track, i){
-        searchRequests.push(sendSearchRequest(track, i * 150, playlistName)); // timeout so we don't run into limits that fast
-    });
-    return Promise.all(searchRequests)
-        .then(results => {
+
+    /**
+     * @return {Promise.<Array>}
+     */
+    function searchNextTrack(){
+        if(tracks.length === 0){
             if(process.stdout.isTTY){
                 process.stdout.write('\n');
             }
-            return results.filter(result => typeof result === 'string');
-        });
+            return Promise.resolve(results);
+        }
+
+        let track = tracks.shift();
+        return sendSearchRequest(track, playlistName)
+            .then(result => {
+                if(typeof result === 'string'){
+                    results.push(result);
+                }
+            })
+            .then(() => searchNextTrack());
+    }
+
+    return searchNextTrack();
 }
 
 /**
  * sendSearchRequest
  * @param {object} track
  * @param {string} track.artist in UPPERCASE
- * @param {string} track.title in UPPERCASE,
- * @param {int} [timeOut] waits for this time (ms) so we don't run into limits that fast
+ * @param {string} track.title in UPPERCASE
  * @param {string} playlistName
  * @returns {Promise}
  */
-function sendSearchRequest(track, timeOut, playlistName){
-    var time = timeOut || 0;
+function sendSearchRequest(track, playlistName){
     let tryCounter = 0; // count requests for one track to prevent infinite loop (in case of error the request might be tried again)
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            resolve(makeRequest().catch(error => reject(error)));
-        }, time);
-    });
+    return makeRequest();
 
     /**
      * @return {Promise}
@@ -54,7 +60,8 @@ function sendSearchRequest(track, timeOut, playlistName){
     function makeRequest(){
         return new Promise((resolve, reject) => {
             if(tryCounter > 3){
-                return reject('Error: SearchRequest for "'+ track.artist + ' - ' + track.title + '" was tried more than 3 times.');
+                logger.log('Error: SearchRequest for "'+ track.artist + ' - ' + track.title + '" was tried more than 3 times.', playlistName);
+                return resolve();
             }
             tryCounter += 1;
             let accessToken = spotifyOAuth.getAccessToken();
@@ -63,7 +70,7 @@ function sendSearchRequest(track, timeOut, playlistName){
                 return reject('no access token found');
             }
 
-            var spotifySearchReq = https.request({
+            let spotifySearchReq = https.request({
                 hostname: "api.spotify.com",
                 path: "/v1/search?type=track&q=artist:"+encodeURIComponent(track.artist+' ')+'track:'+encodeURIComponent(track.title),
                 method: 'GET',
@@ -72,17 +79,17 @@ function sendSearchRequest(track, timeOut, playlistName){
                     'Accept': 'application/json'
                 }
             }, function(res){
-                spotifyHelper.checkForRateLimit(res, 'searching track', () => sendSearchRequest(track, 0, playlistName))
+                spotifyHelper.checkForRateLimit(res, 'searching track', () => sendSearchRequest(track, playlistName))
                     .then((rateLimitPromise) => {
                         if(rateLimitPromise){
                             return rateLimitPromise;
                         }
-                        var jsonResponse = '';
+                        let jsonResponse = '';
                         res.on('data', function(chunk){
                             jsonResponse += chunk;
                         });
                         res.on('end', function(){
-                            var spotifyPlaylist = require('./spotifyPlaylist'),
+                            let spotifyPlaylist = require('./spotifyPlaylist'),
                                 result = JSON.parse(jsonResponse);
 
                             if(result.error){
@@ -93,8 +100,9 @@ function sendSearchRequest(track, timeOut, playlistName){
                                         break;
                                     case 401:
                                         // accessToken might be expired
-                                        return resolve(spotifyOAuth.refresh()
-                                            .then(makeRequest().catch(error => logger.log(error, playlistName))));
+                                        return spotifyOAuth.refresh()
+                                            .then(() => makeRequest())
+                                            .then(() => resolve());
                                         break;
                                     default:
                                         let message = result.error.message || 'Unknown error while searching';
