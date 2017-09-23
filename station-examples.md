@@ -11,39 +11,38 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
     "radioTrackserviceUrl": "http://www.bbc.co.uk/radio1/playlist",
     "radioEntrySelector": "div.pll-playlist-item-details",
     "radioTitleSelector": "div.pll-playlist-item-title",
-    "radioArtistSelector": "div.pll-playlist-item-artist > a",
+    "radioArtistSelector": "div.pll-playlist-item-artist > a"
 
 ## ORF FM4
 
     "radioTrackserviceUrl": "https://audioapi.orf.at/fm4/api/json/current/broadcasts",
-    "fm4Api": true,
+    "fm4Api": true
 
 ## ORF Ö1
 
     "radioTrackserviceUrl": "https://audioapi.orf.at/oe1/api/json/current/broadcasts",
-    "fm4Api": true,
+    "fm4Api": true
 
 ## RadioX
 
     "radioTrackserviceUrl": "http://www.radiox.co.uk/playlist/",
-    "radioEntrySelector": "div.playlist_entry_info",
+    "radioEntrySelector": ".song__text-content",
     "radioTitleSelector": ".track",
-    "radioArtistSelector": ".artist",
-    "fm4Api": false,
+    "radioArtistSelector": ".artist"
 
 ## Radio Nova
 
     "radioTrackserviceUrl": "http://nova.fr/radionova/radio-nova",
     "radioEntrySelector": ".square-item>a>.title",
     "radioTitleSelector": ".description",
-    "radioArtistSelector": ".name",
+    "radioArtistSelector": ".name"
 
 ## NDR2
 
     "radioTrackserviceUrl": "http://www.ndr.de/ndr2/programm/titelliste1202.html",
     "radioEntrySelector": "div#playlist>ul>li.program>div.details>h3",
     "radioTitleSelector": "span.title",
-    "radioArtistSelector": "span.artist",
+    "radioArtistSelector": "span.artist"
 
 ## FluxFM
 
@@ -57,11 +56,11 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
     "radioTrackserviceUrl": "http://www.swr.de/swr1/bw/musikrecherche/",
     "radioEntrySelector": ".musicItemText",
     "radioTitleSelector": "h3",
-    "radioArtistSelector": "p",
+    "radioArtistSelector": "p"
 
 ## Radio Swiss Jazz
 
     "radioTrackserviceUrl": "http://www.radioswissjazz.ch/de/musikprogramm",
     "radioEntrySelector": ".playlist>.item-row",
     "radioTitleSelector": ".titletag",
-    "radioArtistSelector": ".artist",
+    "radioArtistSelector": ".artist"

@@ -7,7 +7,7 @@
         "radiox": {
             "playlistId": "",
             "radioTrackserviceUrl": "http://www.radiox.co.uk/playlist/",
-            "radioEntrySelector": "div.playlist_entry_info",
+            "radioEntrySelector": ".song__text-content",
             "radioTitleSelector": ".track",
             "radioArtistSelector": ".artist"
         },
