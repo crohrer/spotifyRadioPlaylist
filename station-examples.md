@@ -33,10 +33,10 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
 
 ## Radio Nova
 
-    "radioTrackserviceUrl": "http://www.novaplanet.com/radionova/cetaitquoicetitre/",
-    "radioEntrySelector": "div.cestquoicetitre_results>div.resultat>div.info-col",
-    "radioTitleSelector": "h3.titre",
-    "radioArtistSelector": "h2.artiste",
+    "radioTrackserviceUrl": "http://nova.fr/radionova/radio-nova",
+    "radioEntrySelector": ".square-item>a>.title",
+    "radioTitleSelector": ".description",
+    "radioArtistSelector": ".name",
 
 ## NDR2
 
