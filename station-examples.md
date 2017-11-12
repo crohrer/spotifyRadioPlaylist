@@ -64,3 +64,31 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
     "radioEntrySelector": ".playlist>.item-row",
     "radioTitleSelector": ".titletag",
     "radioArtistSelector": ".artist"
+
+## Radio ROX (Norway)
+
+    "radioTrackserviceUrl": "http://marci327.marci.io/",
+    "radioEntrySelector": "div.clearfix",
+    "radioTitleSelector": ".title",
+    "radioArtistSelector": ".artist"
+
+## detektor.fm
+
+    "radioTrackserviceUrl": "https://detektor.fm/playlisten/songs-musikstream",
+    "radioEntrySelector": "#loadPlaylist > .c5",
+    "radioTitleSelector": ".medium-2",
+    "radioArtistSelector": ".normal:last-child"
+
+## KCRW
+
+    "radioTrackserviceUrl": "https://www.kcrw.com/playlists",
+    "radioEntrySelector": ".song",
+    "radioTitleSelector": ".name",
+    "radioArtistSelector": ".artist"
+
+## Power 106
+
+    "radioTrackserviceUrl": "http://www.power106.com/broadcasthistory",
+    "radioEntrySelector": ".views-row",
+    "radioTitleSelector": ".views-field-field-title",
+    "radioArtistSelector": ".views-field-field-artist > .field-content > span"
