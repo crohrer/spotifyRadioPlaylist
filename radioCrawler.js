@@ -48,7 +48,6 @@ function getTracks(playlistName, trackserviceUrl){
             .html()
             .then(searchInHtml)
             .then((tracks) => resolve(tracks))
-            .close()
             .catch(() => {
                 logger.log('error requesting trackservice using horseman.', playlistName);
                 try {
@@ -90,7 +89,8 @@ function getTracks(playlistName, trackserviceUrl){
                     reject();
                 }
 
-            });
+            })
+            .close();
     });
 
     function searchInHtml(html){
