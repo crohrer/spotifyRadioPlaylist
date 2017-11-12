@@ -48,8 +48,11 @@ function getTracks(playlistName, trackserviceUrl){
             .html()
             .then(searchInHtml)
             .then((tracks) => resolve(tracks))
-            .catch(() => {
+            .catch(e => {
                 logger.log('error requesting trackservice using horseman.', playlistName);
+                if(e){
+                    logger.log(e, playlistName)
+                }
                 try {
                     let httpx = (URL.parse(url).protocol === 'http:') ? http : https;
                     let trackserviceReq = httpx.request(url, function(res) {
@@ -84,7 +87,7 @@ function getTracks(playlistName, trackserviceUrl){
 
                     trackserviceReq.end();
                 }
-                catch(e) {
+                catch(error) {
                     logger.log('error requesting trackservice using http.', playlistName);
                     reject();
                 }
