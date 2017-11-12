@@ -50,15 +50,14 @@ function getTracks(playlistName, offset){
             let data = '';
 
             if(res.statusCode !== 200) {
-                spotifyHelper.checkForRateLimit(res, 'requesting playlist tracks', () => spotifyPlaylist.getTracks(playlistName, offset))
+                spotifyHelper.checkForRateLimit(res, 'requesting playlist tracks', () => resolve(spotifyPlaylist.getTracks(playlistName, offset)))
                     .then(() => {
                         if(res.statusCode === 401){
                             spotifyOAuth.refresh()
                                 .then(require('./main').start);
-                        } else {
+			} else if(res.statusCode !== 429) {
                             var error = "Error getting tracks from playlist. Status "+res.statusCode;
                             logger.log(error, playlistName);
-                            reject(error);
                             process.exit(1);
                         }
                     });
