@@ -72,7 +72,7 @@ function sendSearchRequest(track, playlistName){
 
             let spotifySearchReq = https.request({
                 hostname: "api.spotify.com",
-                path: "/v1/search?type=track&q=artist:"+encodeURIComponent(track.artist+' ')+'track:'+encodeURIComponent(track.title),
+                path: "/v1/search?type=track&q=artist:."+encodeURIComponent(track.artist+' ')+'track:.'+encodeURIComponent(track.title),
                 method: 'GET',
                 headers: {
                     'Authorization': 'Bearer '+ accessToken,
