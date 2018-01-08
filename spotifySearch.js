@@ -36,6 +36,7 @@ function searchTracks(tracks, playlistName){
                     results.push(result);
                 }
             })
+	    .delay(100)
             .then(() => searchNextTrack());
     }
 
@@ -119,7 +120,7 @@ function sendSearchRequest(track, playlistName){
                             }
 
                             if(process.stdout.isTTY){
-                                process.stdout.write('.'); // writes one dot per search Request for visualization
+                                process.stdout.write('•'); // writes one dot per search Request for visualization
                             }
 
                             result.tracks.items.some(function(item){ // iterate all items and break on success (return true)
