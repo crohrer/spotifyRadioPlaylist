@@ -88,7 +88,7 @@ Works for *radio1*, *1xtra*, *radio2*, *6music* and *radioscotland* (adjust the 
 
 ## Power 106
 
-    "radioTrackserviceUrl": "http://www.power106.com/broadcasthistory",
-    "radioEntrySelector": ".views-row",
-    "radioTitleSelector": ".views-field-field-title",
-    "radioArtistSelector": ".views-field-field-artist > .field-content > span"
+    "radioTrackserviceUrl": "http://www.power106.com/playlist/",
+    "radioEntrySelector": ".entry-content tr:nth-child(n+2)",
+    "radioTitleSelector": ".entry-content tr:nth-child(n+2) td:nth-child(3)",
+    "radioArtistSelector": ".entry-content tr:nth-child(n+2) td:nth-child(2)"
